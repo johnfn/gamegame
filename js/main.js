@@ -12,3 +12,14 @@ var MainState = (function (_super) {
     }
     return MainState;
 })(Phaser.State);
+
+var Game = (function () {
+    // TODO... browsers w/o WEBGL...
+    function Game() {
+        this.state = new MainState();
+        this.game = new Phaser.Game(800, 600, Phaser.WEBGL, "main", this.state);
+    }
+    return Game;
+})();
+
+new Game();
