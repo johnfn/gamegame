@@ -1,0 +1,1 @@
+tsc --watch ts/main.ts --out js/main.js

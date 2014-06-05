@@ -1,0 +1,19 @@
+{
+    "settings": {
+        "typescript": {
+            "roots": [
+                "gamegame/ts/main.ts"
+            ]
+        }
+    },
+    "folders": [
+        {
+            "follow_symlinks": true,
+            "path": "/Users/johnfn/code/gamegame"
+        },
+        {
+            "follow_symlinks": true,
+            "path": "."
+        }
+    ]
+}
