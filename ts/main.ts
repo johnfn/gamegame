@@ -1,7 +1,46 @@
 /// <reference path="../d/phaser.d.ts" />
 
-class MainState extends Phaser.State {
+class Entity extends Phaser.Sprite {
+  body:Phaser.Physics.Arcade.Body;
 
+  constructor(game:Phaser.Game, x:number, y:number, spritesheet:string, frame:number) {
+    super(game, x, y, spritesheet, frame);
+
+    game.physics.enable(this, Phaser.Physics.ARCADE);
+
+    var superclassName:string = <string> (<any> this).constructor.name;
+    var currentState:MainState = (<MainState> game.state.getCurrentState());
+    if (!currentState.groups[superclassName]) {
+      var newGroup:Phaser.Group = game.add.group();
+      currentState.groups[superclassName] = newGroup;
+      this.game.add.existing(newGroup);
+    }
+
+    currentState.groups[superclassName].add(this);
+  }
+}
+
+class Player extends Entity {
+  constructor(game:Phaser.Game) {
+    super(game, 50, 50, "player", 0);
+  }
+}
+
+class MainState extends Phaser.State {
+  groups: {[key: string]: Phaser.Group} = {};
+
+  public preload():void {
+    this.load.spritesheet("player","assets/player.png", 25, 25, 1);
+  }
+
+  public create():void {
+    var cursors = this.game.input.keyboard.createCursorKeys();
+
+    debugger;
+
+    var p:Player = new Player(this.game);
+    this.game.add.existing(p);
+  }
 }
 
 class Game {
