@@ -21,8 +21,33 @@ class Entity extends Phaser.Sprite {
 }
 
 class Player extends Entity {
+  speed:number = 300;
+
   constructor(game:Phaser.Game) {
     super(game, 50, 50, "player", 0);
+
+    (<any> this.body).drag.x = 1000;
+    (<any> this.body).drag.y = 1000;
+    }
+
+  update():void {
+    var keyboard = this.game.input.keyboard;
+
+    if (keyboard.isDown(Phaser.Keyboard.A)) {
+      this.body.velocity.x = -this.speed;
+    }
+
+    if (keyboard.isDown(Phaser.Keyboard.D)) {
+      this.body.velocity.x = this.speed;
+    }
+
+    if (keyboard.isDown(Phaser.Keyboard.W)) {
+      this.body.velocity.y = -this.speed;
+    }
+
+    if (keyboard.isDown(Phaser.Keyboard.S)) {
+      this.body.velocity.y = this.speed;
+    }
   }
 }
 
@@ -35,8 +60,6 @@ class MainState extends Phaser.State {
 
   public create():void {
     var cursors = this.game.input.keyboard.createCursorKeys();
-
-    debugger;
 
     var p:Player = new Player(this.game);
     this.game.add.existing(p);

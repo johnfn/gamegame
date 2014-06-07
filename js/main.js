@@ -29,7 +29,30 @@ var Player = (function (_super) {
     __extends(Player, _super);
     function Player(game) {
         _super.call(this, game, 50, 50, "player", 0);
+        this.speed = 300;
+
+        this.body.drag.x = 1000;
+        this.body.drag.y = 1000;
     }
+    Player.prototype.update = function () {
+        var keyboard = this.game.input.keyboard;
+
+        if (keyboard.isDown(Phaser.Keyboard.A)) {
+            this.body.velocity.x = -this.speed;
+        }
+
+        if (keyboard.isDown(Phaser.Keyboard.D)) {
+            this.body.velocity.x = this.speed;
+        }
+
+        if (keyboard.isDown(Phaser.Keyboard.W)) {
+            this.body.velocity.y = -this.speed;
+        }
+
+        if (keyboard.isDown(Phaser.Keyboard.S)) {
+            this.body.velocity.y = this.speed;
+        }
+    };
     return Player;
 })(Entity);
 
@@ -45,8 +68,6 @@ var MainState = (function (_super) {
 
     MainState.prototype.create = function () {
         var cursors = this.game.input.keyboard.createCursorKeys();
-
-        debugger;
 
         var p = new Player(this.game);
         this.game.add.existing(p);
