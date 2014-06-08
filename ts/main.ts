@@ -53,6 +53,8 @@ class Player extends Entity {
 
 class MainState extends Phaser.State {
   groups: {[key: string]: Phaser.Group} = {};
+  player:Player;
+  layers:{[key: string]: Phaser.TilemapLayer} = {};
 
   public preload():void {
     this.load.spritesheet("player", "assets/player.png", 25, 25, 1);
@@ -74,12 +76,17 @@ class MainState extends Phaser.State {
 
       var l:Phaser.TilemapLayer = tileset.createLayer(name);
       this.game.add.existing(l);
+      this.layers[name] = l;
     }
 
     tileset.setCollisionBetween(1, 151, true, "walls");
 
-    var p:Player = new Player(this.game);
-    this.game.add.existing(p);
+    this.player = new Player(this.game);
+    this.game.add.existing(this.player);
+  }
+
+  public update():void {
+    this.game.physics.arcade.collide(this.player, this.layers['walls']);
   }
 }
 

@@ -61,6 +61,7 @@ var MainState = (function (_super) {
     function MainState() {
         _super.apply(this, arguments);
         this.groups = {};
+        this.layers = {};
     }
     MainState.prototype.preload = function () {
         this.load.spritesheet("player", "assets/player.png", 25, 25, 1);
@@ -82,12 +83,17 @@ var MainState = (function (_super) {
 
             var l = tileset.createLayer(name);
             this.game.add.existing(l);
+            this.layers[name] = l;
         }
 
         tileset.setCollisionBetween(1, 151, true, "walls");
 
-        var p = new Player(this.game);
-        this.game.add.existing(p);
+        this.player = new Player(this.game);
+        this.game.add.existing(this.player);
+    };
+
+    MainState.prototype.update = function () {
+        this.game.physics.arcade.collide(this.player, this.layers['walls']);
     };
     return MainState;
 })(Phaser.State);
