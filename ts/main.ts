@@ -28,7 +28,7 @@ class Player extends Entity {
 
     (<any> this.body).drag.x = 1000;
     (<any> this.body).drag.y = 1000;
-    }
+  }
 
   update():void {
     var keyboard = this.game.input.keyboard;
@@ -55,7 +55,9 @@ class MainState extends Phaser.State {
   groups: {[key: string]: Phaser.Group} = {};
 
   public preload():void {
-    this.load.spritesheet("player","assets/player.png", 25, 25, 1);
+    this.load.spritesheet("player", "assets/player.png", 25, 25, 1);
+    this.load.spritesheet("tilesetkey", "assets/tileset.png", 25, 25, 1);
+    this.load.tilemap("map", "assets/map.json", null, Phaser.Tilemap.TILED_JSON);
   }
 
   public create():void {
@@ -63,6 +65,15 @@ class MainState extends Phaser.State {
 
     var p:Player = new Player(this.game);
     this.game.add.existing(p);
+
+    var tileset:Phaser.Tilemap = this.game.add.tilemap("map", 25, 25, 30, 30); // w,h, mapw, maph
+    tileset.addTilesetImage("tileset", "tilesetkey", 25, 25);
+
+    tileset.setCollisionBetween(1, 151, true, "walls");
+    var walls = tileset.createLayer("walls");
+
+    this.game.add.existing(walls);
+
   }
 }
 

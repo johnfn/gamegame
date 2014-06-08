@@ -64,6 +64,8 @@ var MainState = (function (_super) {
     }
     MainState.prototype.preload = function () {
         this.load.spritesheet("player", "assets/player.png", 25, 25, 1);
+        this.load.spritesheet("tilesetkey", "assets/tileset.png", 25, 25, 1);
+        this.load.tilemap("map", "assets/map.json", null, Phaser.Tilemap.TILED_JSON);
     };
 
     MainState.prototype.create = function () {
@@ -71,6 +73,14 @@ var MainState = (function (_super) {
 
         var p = new Player(this.game);
         this.game.add.existing(p);
+
+        var tileset = this.game.add.tilemap("map", 25, 25, 30, 30);
+        tileset.addTilesetImage("tileset", "tilesetkey", 25, 25);
+
+        tileset.setCollisionBetween(1, 151, true, "walls");
+        var walls = tileset.createLayer("walls");
+
+        this.game.add.existing(walls);
     };
     return MainState;
 })(Phaser.State);
