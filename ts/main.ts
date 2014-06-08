@@ -63,17 +63,23 @@ class MainState extends Phaser.State {
   public create():void {
     var cursors = this.game.input.keyboard.createCursorKeys();
 
-    var p:Player = new Player(this.game);
-    this.game.add.existing(p);
-
     var tileset:Phaser.Tilemap = this.game.add.tilemap("map", 25, 25, 30, 30); // w,h, mapw, maph
+    console.log((<any> tileset.layers[0]).name);
+
     tileset.addTilesetImage("tileset", "tilesetkey", 25, 25);
 
+    for (var i = 0; i < tileset.layers.length; i++) {
+      var tilesetObj:any = tileset.layers[i];
+      var name:string = tilesetObj.name;
+
+      var l:Phaser.TilemapLayer = tileset.createLayer(name);
+      this.game.add.existing(l);
+    }
+
     tileset.setCollisionBetween(1, 151, true, "walls");
-    var walls = tileset.createLayer("walls");
 
-    this.game.add.existing(walls);
-
+    var p:Player = new Player(this.game);
+    this.game.add.existing(p);
   }
 }
 

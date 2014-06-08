@@ -71,16 +71,23 @@ var MainState = (function (_super) {
     MainState.prototype.create = function () {
         var cursors = this.game.input.keyboard.createCursorKeys();
 
-        var p = new Player(this.game);
-        this.game.add.existing(p);
-
         var tileset = this.game.add.tilemap("map", 25, 25, 30, 30);
+        console.log(tileset.layers[0].name);
+
         tileset.addTilesetImage("tileset", "tilesetkey", 25, 25);
 
-        tileset.setCollisionBetween(1, 151, true, "walls");
-        var walls = tileset.createLayer("walls");
+        for (var i = 0; i < tileset.layers.length; i++) {
+            var tilesetObj = tileset.layers[i];
+            var name = tilesetObj.name;
 
-        this.game.add.existing(walls);
+            var l = tileset.createLayer(name);
+            this.game.add.existing(l);
+        }
+
+        tileset.setCollisionBetween(1, 151, true, "walls");
+
+        var p = new Player(this.game);
+        this.game.add.existing(p);
     };
     return MainState;
 })(Phaser.State);
