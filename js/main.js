@@ -5,6 +5,8 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
+var g;
+
 var Entity = (function (_super) {
     __extends(Entity, _super);
     function Entity(game, x, y, spritesheet, frame) {
@@ -56,12 +58,33 @@ var Player = (function (_super) {
     return Player;
 })(Entity);
 
+// no need to extend groups any more, just have 2 groups of layers.
+var GameMap = (function () {
+    function GameMap(tilesetKey) {
+        this.layers = {};
+        this.collideableLayers = {};
+        var tileset = new Phaser.Tilemap(game, "map", 25, 25, 30, 30);
+
+        tileset.addTilesetImage("tileset", tilesetKey, 25, 25);
+
+        tileset.setCollisionBetween(1, 151, true, "walls");
+
+        for (var i = 0; i < tileset.layers.length; i++) {
+            var tilesetObj = tileset.layers[i];
+            var name = tilesetObj.name;
+
+            var layer = tileset.createLayer(name);
+            this.collideableLayers[name] = layer;
+        }
+    }
+    return GameMap;
+})();
+
 var MainState = (function (_super) {
     __extends(MainState, _super);
     function MainState() {
         _super.apply(this, arguments);
         this.groups = {};
-        this.layers = {};
     }
     MainState.prototype.preload = function () {
         this.load.spritesheet("player", "assets/player.png", 25, 25, 1);
@@ -71,40 +94,21 @@ var MainState = (function (_super) {
 
     MainState.prototype.create = function () {
         var cursors = this.game.input.keyboard.createCursorKeys();
-
-        var tileset = this.game.add.tilemap("map", 25, 25, 30, 30);
-        console.log(tileset.layers[0].name);
-
-        tileset.addTilesetImage("tileset", "tilesetkey", 25, 25);
-
-        for (var i = 0; i < tileset.layers.length; i++) {
-            var tilesetObj = tileset.layers[i];
-            var name = tilesetObj.name;
-
-            var l = tileset.createLayer(name);
-            this.game.add.existing(l);
-            this.layers[name] = l;
-        }
-
-        tileset.setCollisionBetween(1, 151, true, "walls");
+        this.map = new GameMap("tilesetkey");
 
         this.player = new Player(this.game);
         this.game.add.existing(this.player);
+
+        this.gg = this.game.add.group(undefined, undefined, true);
     };
 
     MainState.prototype.update = function () {
-        this.game.physics.arcade.collide(this.player, this.layers['walls']);
+        for (var name in this.map.collideableLayers) {
+            this.game.physics.arcade.collide(this.player, this.map.collideableLayers[name]);
+        }
     };
     return MainState;
 })(Phaser.State);
 
-var Game = (function () {
-    // TODO... browsers w/o WEBGL...
-    function Game() {
-        this.state = new MainState();
-        this.game = new Phaser.Game(800, 600, Phaser.WEBGL, "main", this.state);
-    }
-    return Game;
-})();
-
-new Game();
+var state = new MainState();
+var game = new Phaser.Game(800, 600, Phaser.WEBGL, "main", this.state);

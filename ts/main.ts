@@ -1,5 +1,7 @@
 /// <reference path="../d/phaser.d.ts" />
 
+var g:Phaser.Game;
+
 class Entity extends Phaser.Sprite {
   body:Phaser.Physics.Arcade.Body;
 
@@ -51,10 +53,35 @@ class Player extends Entity {
   }
 }
 
+// no need to extend groups any more, just have 2 groups of layers.
+class GameMap {
+  layers:{[key: string]: Phaser.TilemapLayer} = {};
+
+  collideableLayers: {[key: string]: Phaser.TilemapLayer} = {};
+
+  constructor(tilesetKey: string) {
+    var tileset:Phaser.Tilemap = new Phaser.Tilemap(game, "map", 25, 25, 30, 30); // w,h, mapw, maph
+
+    tileset.addTilesetImage("tileset", tilesetKey, 25, 25);
+
+    tileset.setCollisionBetween(1, 151, true, "walls");
+
+    for (var i = 0; i < tileset.layers.length; i++) {
+      var tilesetObj:any = tileset.layers[i];
+      var name:string = tilesetObj.name;
+
+      var layer:Phaser.TilemapLayer = tileset.createLayer(name);
+      this.collideableLayers[name] = layer;
+    }
+  }
+}
+
 class MainState extends Phaser.State {
   groups: {[key: string]: Phaser.Group} = {};
   player:Player;
-  layers:{[key: string]: Phaser.TilemapLayer} = {};
+  map:GameMap;
+
+  gg:Phaser.Group;
 
   public preload():void {
     this.load.spritesheet("player", "assets/player.png", 25, 25, 1);
@@ -64,41 +91,20 @@ class MainState extends Phaser.State {
 
   public create():void {
     var cursors = this.game.input.keyboard.createCursorKeys();
-
-    var tileset:Phaser.Tilemap = this.game.add.tilemap("map", 25, 25, 30, 30); // w,h, mapw, maph
-    console.log((<any> tileset.layers[0]).name);
-
-    tileset.addTilesetImage("tileset", "tilesetkey", 25, 25);
-
-    for (var i = 0; i < tileset.layers.length; i++) {
-      var tilesetObj:any = tileset.layers[i];
-      var name:string = tilesetObj.name;
-
-      var l:Phaser.TilemapLayer = tileset.createLayer(name);
-      this.game.add.existing(l);
-      this.layers[name] = l;
-    }
-
-    tileset.setCollisionBetween(1, 151, true, "walls");
+    this.map = new GameMap("tilesetkey");
 
     this.player = new Player(this.game);
     this.game.add.existing(this.player);
+
+    this.gg = this.game.add.group(undefined, undefined, true);
   }
 
   public update():void {
-    this.game.physics.arcade.collide(this.player, this.layers['walls']);
+    for (var name in this.map.collideableLayers) {
+      this.game.physics.arcade.collide(this.player, this.map.collideableLayers[name]);
+    }
   }
 }
 
-class Game {
-  game:Phaser.Game;
-  state: Phaser.State;
-
-  // TODO... browsers w/o WEBGL...
-  constructor() {
-    this.state = new MainState();
-    this.game = new Phaser.Game(800, 600, Phaser.WEBGL, "main", this.state);
-  }
-}
-
-new Game();
+var state = new MainState();
+var game = new Phaser.Game(800, 600, Phaser.WEBGL, "main", this.state);
