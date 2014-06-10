@@ -2,6 +2,17 @@
 
 var g:Phaser.Game;
 
+class C {
+  static tileWidth:number = 25;
+  static tileHeight:number = 25;
+
+  static mapWidthInTiles:number  = 30;
+  static mapHeightInTiles:number = 25;
+
+  static mapWidthInPixels:number  = C.mapWidthInTiles * C.tileWidth;
+  static mapHeightInPixels:number = C.mapHeightInTiles * C.tileHeight;
+}
+
 class Entity extends Phaser.Sprite {
   body:Phaser.Physics.Arcade.Body;
 
@@ -24,12 +35,27 @@ class Entity extends Phaser.Sprite {
 
 class Player extends Entity {
   speed:number = 300;
+  map:GameMap;
 
-  constructor(game:Phaser.Game) {
+  constructor(game:Phaser.Game, map:GameMap) {
     super(game, 50, 50, "player", 0);
 
     (<any> this.body).drag.x = 1000;
     (<any> this.body).drag.y = 1000;
+
+    this.map = map;
+    this.checkWorldBounds = true;
+    this.events.onOutOfBounds.add(this.outOfBounds, this);
+  }
+
+  outOfBounds():void {
+    var normalizedX:number = this.x - this.map.mapX;
+    var normalizedY:number = this.y - this.map.mapY;
+
+    var dx = Math.floor(normalizedX / C.mapWidthInPixels);
+    var dy = Math.floor(normalizedY / C.mapHeightInPixels);
+
+    this.map.switchMap(dx, dy);
   }
 
   update():void {
@@ -56,8 +82,9 @@ class Player extends Entity {
 // no need to extend groups any more, just have 2 groups of layers.
 class GameMap {
   layers:{[key: string]: Phaser.TilemapLayer} = {};
-
   collideableLayers: {[key: string]: Phaser.TilemapLayer} = {};
+  public mapX:number = 0;
+  public mapY:number = 0;
 
   constructor(tilesetKey: string) {
     var tileset:Phaser.Tilemap = new Phaser.Tilemap(game, "map", 25, 25, 30, 30); // w,h, mapw, maph
@@ -73,6 +100,13 @@ class GameMap {
       var layer:Phaser.TilemapLayer = tileset.createLayer(name);
       this.collideableLayers[name] = layer;
     }
+  }
+
+  switchMap(dx:number, dy:number) {
+    this.mapX += dx * C.mapWidthInPixels;
+    this.mapY += dy * C.mapHeightInPixels;
+
+    game.camera.setPosition(this.mapX, this.mapY);
   }
 }
 
@@ -91,9 +125,11 @@ class MainState extends Phaser.State {
 
   public create():void {
     var cursors = this.game.input.keyboard.createCursorKeys();
+    game.camera.bounds = null;
+
     this.map = new GameMap("tilesetkey");
 
-    this.player = new Player(this.game);
+    this.player = new Player(this.game, this.map);
     this.game.add.existing(this.player);
 
     this.gg = this.game.add.group(undefined, undefined, true);
@@ -107,4 +143,4 @@ class MainState extends Phaser.State {
 }
 
 var state = new MainState();
-var game = new Phaser.Game(800, 600, Phaser.WEBGL, "main", this.state);
+var game = new Phaser.Game(C.mapWidthInPixels, C.mapHeightInPixels, Phaser.WEBGL, "main", this.state);

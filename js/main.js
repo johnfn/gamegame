@@ -7,6 +7,20 @@ var __extends = this.__extends || function (d, b) {
 };
 var g;
 
+var C = (function () {
+    function C() {
+    }
+    C.tileWidth = 25;
+    C.tileHeight = 25;
+
+    C.mapWidthInTiles = 30;
+    C.mapHeightInTiles = 25;
+
+    C.mapWidthInPixels = C.mapWidthInTiles * C.tileWidth;
+    C.mapHeightInPixels = C.mapHeightInTiles * C.tileHeight;
+    return C;
+})();
+
 var Entity = (function (_super) {
     __extends(Entity, _super);
     function Entity(game, x, y, spritesheet, frame) {
@@ -29,13 +43,27 @@ var Entity = (function (_super) {
 
 var Player = (function (_super) {
     __extends(Player, _super);
-    function Player(game) {
+    function Player(game, map) {
         _super.call(this, game, 50, 50, "player", 0);
         this.speed = 300;
 
         this.body.drag.x = 1000;
         this.body.drag.y = 1000;
+
+        this.map = map;
+        this.checkWorldBounds = true;
+        this.events.onOutOfBounds.add(this.outOfBounds, this);
     }
+    Player.prototype.outOfBounds = function () {
+        var normalizedX = this.x - this.map.mapX;
+        var normalizedY = this.y - this.map.mapY;
+
+        var dx = Math.floor(normalizedX / C.mapWidthInPixels);
+        var dy = Math.floor(normalizedY / C.mapHeightInPixels);
+
+        this.map.switchMap(dx, dy);
+    };
+
     Player.prototype.update = function () {
         var keyboard = this.game.input.keyboard;
 
@@ -63,6 +91,8 @@ var GameMap = (function () {
     function GameMap(tilesetKey) {
         this.layers = {};
         this.collideableLayers = {};
+        this.mapX = 0;
+        this.mapY = 0;
         var tileset = new Phaser.Tilemap(game, "map", 25, 25, 30, 30);
 
         tileset.addTilesetImage("tileset", tilesetKey, 25, 25);
@@ -77,6 +107,12 @@ var GameMap = (function () {
             this.collideableLayers[name] = layer;
         }
     }
+    GameMap.prototype.switchMap = function (dx, dy) {
+        this.mapX += dx * C.mapWidthInPixels;
+        this.mapY += dy * C.mapHeightInPixels;
+
+        game.camera.setPosition(this.mapX, this.mapY);
+    };
     return GameMap;
 })();
 
@@ -94,9 +130,11 @@ var MainState = (function (_super) {
 
     MainState.prototype.create = function () {
         var cursors = this.game.input.keyboard.createCursorKeys();
+        game.camera.bounds = null;
+
         this.map = new GameMap("tilesetkey");
 
-        this.player = new Player(this.game);
+        this.player = new Player(this.game, this.map);
         this.game.add.existing(this.player);
 
         this.gg = this.game.add.group(undefined, undefined, true);
@@ -111,4 +149,4 @@ var MainState = (function (_super) {
 })(Phaser.State);
 
 var state = new MainState();
-var game = new Phaser.Game(800, 600, Phaser.WEBGL, "main", this.state);
+var game = new Phaser.Game(C.mapWidthInPixels, C.mapHeightInPixels, Phaser.WEBGL, "main", this.state);
