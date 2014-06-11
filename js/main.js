@@ -88,12 +88,12 @@ var Player = (function (_super) {
 
 // no need to extend groups any more, just have 2 groups of layers.
 var GameMap = (function () {
-    function GameMap(tilesetKey) {
+    function GameMap(tilesetKey, tilemapKey) {
         this.layers = {};
         this.collideableLayers = {};
         this.mapX = 0;
         this.mapY = 0;
-        var tileset = new Phaser.Tilemap(game, "map", 25, 25, 30, 30);
+        var tileset = new Phaser.Tilemap(game, tilemapKey, 25, 25, 30, 30);
 
         tileset.addTilesetImage("tileset", tilesetKey, 25, 25);
 
@@ -132,7 +132,7 @@ var MainState = (function (_super) {
         var cursors = this.game.input.keyboard.createCursorKeys();
         game.camera.bounds = null;
 
-        this.map = new GameMap("tilesetkey");
+        this.map = new GameMap("tilesetkey", "map");
 
         this.player = new Player(this.game, this.map);
         this.game.add.existing(this.player);
@@ -141,8 +141,17 @@ var MainState = (function (_super) {
     };
 
     MainState.prototype.update = function () {
+        var kb = game.input.keyboard;
+
         for (var name in this.map.collideableLayers) {
             this.game.physics.arcade.collide(this.player, this.map.collideableLayers[name]);
+        }
+
+        if (kb.isDown(Phaser.Keyboard.Q)) {
+            game.cache.removeTilemap("map");
+            var json = $.ajax({ url: "assets/map.json", async: false, dataType: 'text', cache: false }).responseText;
+            this.load.tilemap("map", "assets/map.json", json, Phaser.Tilemap.TILED_JSON);
+            this.map = new GameMap("tilesetkey", "map");
         }
     };
     return MainState;

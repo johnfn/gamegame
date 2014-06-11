@@ -86,8 +86,8 @@ class GameMap {
   public mapX:number = 0;
   public mapY:number = 0;
 
-  constructor(tilesetKey: string) {
-    var tileset:Phaser.Tilemap = new Phaser.Tilemap(game, "map", 25, 25, 30, 30); // w,h, mapw, maph
+  constructor(tilesetKey: string, tilemapKey: string) {
+    var tileset:Phaser.Tilemap = new Phaser.Tilemap(game, tilemapKey, 25, 25, 30, 30); // w,h, mapw, maph
 
     tileset.addTilesetImage("tileset", tilesetKey, 25, 25);
 
@@ -127,7 +127,7 @@ class MainState extends Phaser.State {
     var cursors = this.game.input.keyboard.createCursorKeys();
     game.camera.bounds = null;
 
-    this.map = new GameMap("tilesetkey");
+    this.map = new GameMap("tilesetkey", "map");
 
     this.player = new Player(this.game, this.map);
     this.game.add.existing(this.player);
@@ -136,8 +136,17 @@ class MainState extends Phaser.State {
   }
 
   public update():void {
+    var kb = game.input.keyboard;
+
     for (var name in this.map.collideableLayers) {
       this.game.physics.arcade.collide(this.player, this.map.collideableLayers[name]);
+    }
+
+    if (kb.isDown(Phaser.Keyboard.Q)) {
+      game.cache.removeTilemap("map");
+      var json = $.ajax({url: "assets/map.json", async: false, dataType: 'text', cache: false }).responseText;
+      this.load.tilemap("map", "assets/map.json", json, Phaser.Tilemap.TILED_JSON);
+      this.map = new GameMap("tilesetkey", "map");
     }
   }
 }
