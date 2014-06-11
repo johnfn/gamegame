@@ -93,17 +93,19 @@ var GameMap = (function () {
         this.collideableLayers = {};
         this.mapX = 0;
         this.mapY = 0;
-        var tileset = new Phaser.Tilemap(game, tilemapKey, 25, 25, 30, 30);
+        this.tileset = new Phaser.Tilemap(game, tilemapKey, 25, 25, 30, 30); // w,h, mapw, maph
+        this.tilemapKey = tilemapKey;
+        this.tilesetKey = tilesetKey;
 
-        tileset.addTilesetImage("tileset", tilesetKey, 25, 25);
+        this.tileset.addTilesetImage("tileset", tilesetKey, 25, 25);
 
-        tileset.setCollisionBetween(1, 151, true, "walls");
+        this.tileset.setCollisionBetween(1, 151, true, "walls");
 
-        for (var i = 0; i < tileset.layers.length; i++) {
-            var tilesetObj = tileset.layers[i];
+        for (var i = 0; i < this.tileset.layers.length; i++) {
+            var tilesetObj = this.tileset.layers[i];
             var name = tilesetObj.name;
 
-            var layer = tileset.createLayer(name);
+            var layer = this.tileset.createLayer(name);
             this.collideableLayers[name] = layer;
         }
     }
@@ -112,6 +114,26 @@ var GameMap = (function () {
         this.mapY += dy * C.mapHeightInPixels;
 
         game.camera.setPosition(this.mapX, this.mapY);
+    };
+
+    GameMap.prototype.reload = function () {
+        game.cache.removeTilemap("map");
+        var json = $.ajax({ url: "assets/map.json", async: false, dataType: 'text', cache: false }).responseText;
+        game.load.tilemap("map", "assets/map.json", json, Phaser.Tilemap.TILED_JSON);
+        this.tileset = new Phaser.Tilemap(game, this.tilemapKey, 25, 25, 30, 30);
+
+        this.tileset.addTilesetImage("tileset", this.tilesetKey, 25, 25);
+        this.tileset.setCollisionBetween(1, 151, true, "walls");
+
+        for (var i = 0; i < this.tileset.layers.length; i++) {
+            var tilesetObj = this.tileset.layers[i];
+            var name = tilesetObj.name;
+
+            this.collideableLayers[name].destroy(true);
+
+            var layer = this.tileset.createLayer(name);
+            this.collideableLayers[name] = layer;
+        }
     };
     return GameMap;
 })();
@@ -136,8 +158,6 @@ var MainState = (function (_super) {
 
         this.player = new Player(this.game, this.map);
         this.game.add.existing(this.player);
-
-        this.gg = this.game.add.group(undefined, undefined, true);
     };
 
     MainState.prototype.update = function () {
@@ -148,10 +168,7 @@ var MainState = (function (_super) {
         }
 
         if (kb.isDown(Phaser.Keyboard.Q)) {
-            game.cache.removeTilemap("map");
-            var json = $.ajax({ url: "assets/map.json", async: false, dataType: 'text', cache: false }).responseText;
-            this.load.tilemap("map", "assets/map.json", json, Phaser.Tilemap.TILED_JSON);
-            this.map = new GameMap("tilesetkey", "map");
+            this.map.reload();
         }
     };
     return MainState;

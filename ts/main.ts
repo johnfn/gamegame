@@ -83,21 +83,27 @@ class Player extends Entity {
 class GameMap {
   layers:{[key: string]: Phaser.TilemapLayer} = {};
   collideableLayers: {[key: string]: Phaser.TilemapLayer} = {};
+  tileset: Phaser.Tilemap;
+  tilemapKey: string;
+  tilesetKey: string;
+
   public mapX:number = 0;
   public mapY:number = 0;
 
   constructor(tilesetKey: string, tilemapKey: string) {
-    var tileset:Phaser.Tilemap = new Phaser.Tilemap(game, tilemapKey, 25, 25, 30, 30); // w,h, mapw, maph
+    this.tileset = new Phaser.Tilemap(game, tilemapKey, 25, 25, 30, 30); // w,h, mapw, maph
+    this.tilemapKey = tilemapKey;
+    this.tilesetKey = tilesetKey;
 
-    tileset.addTilesetImage("tileset", tilesetKey, 25, 25);
+    this.tileset.addTilesetImage("tileset", tilesetKey, 25, 25);
 
-    tileset.setCollisionBetween(1, 151, true, "walls");
+    this.tileset.setCollisionBetween(1, 151, true, "walls");
 
-    for (var i = 0; i < tileset.layers.length; i++) {
-      var tilesetObj:any = tileset.layers[i];
+    for (var i = 0; i < this.tileset.layers.length; i++) {
+      var tilesetObj:any = this.tileset.layers[i];
       var name:string = tilesetObj.name;
 
-      var layer:Phaser.TilemapLayer = tileset.createLayer(name);
+      var layer:Phaser.TilemapLayer = this.tileset.createLayer(name);
       this.collideableLayers[name] = layer;
     }
   }
@@ -107,6 +113,34 @@ class GameMap {
     this.mapY += dy * C.mapHeightInPixels;
 
     game.camera.setPosition(this.mapX, this.mapY);
+  }
+
+  reload() {
+    game.cache.removeTilemap("map");
+    var json = $.ajax({url: "assets/map.json", async: false, dataType: 'text', cache: false }).responseText;
+    game.load.tilemap("map", "assets/map.json", json, Phaser.Tilemap.TILED_JSON);
+    this.tileset = new Phaser.Tilemap(game, this.tilemapKey, 25, 25, 30, 30);
+
+
+    this.tileset.addTilesetImage("tileset", this.tilesetKey, 25, 25);
+    this.tileset.setCollisionBetween(1, 151, true, "walls");
+
+    /*
+    ?????????????????
+    for (var key in this.collideableLayers) {
+    }
+    */
+
+    for (var i = 0; i < this.tileset.layers.length; i++) {
+      var tilesetObj:any = this.tileset.layers[i];
+      var name:string = tilesetObj.name;
+
+      this.collideableLayers[name].destroy(true);
+
+      var layer:Phaser.TilemapLayer = this.tileset.createLayer(name);
+      this.collideableLayers[name] = layer;
+    }
+
   }
 }
 
@@ -131,8 +165,6 @@ class MainState extends Phaser.State {
 
     this.player = new Player(this.game, this.map);
     this.game.add.existing(this.player);
-
-    this.gg = this.game.add.group(undefined, undefined, true);
   }
 
   public update():void {
@@ -143,10 +175,7 @@ class MainState extends Phaser.State {
     }
 
     if (kb.isDown(Phaser.Keyboard.Q)) {
-      game.cache.removeTilemap("map");
-      var json = $.ajax({url: "assets/map.json", async: false, dataType: 'text', cache: false }).responseText;
-      this.load.tilemap("map", "assets/map.json", json, Phaser.Tilemap.TILED_JSON);
-      this.map = new GameMap("tilesetkey", "map");
+      this.map.reload();
     }
   }
 }
