@@ -13,10 +13,49 @@ class C {
   static mapHeightInPixels:number = C.mapHeightInTiles * C.tileHeight;
 }
 
+class MainState extends Phaser.State {
+  groups: {[key: string]: Phaser.Group} = {};
+  player:Player;
+  map:GameMap;
+
+  gg:Phaser.Group;
+
+  public preload():void {
+    this.load.spritesheet("player", "assets/player.png", 25, 25, 1);
+    this.load.spritesheet("tilesetkey", "assets/tileset.png", 25, 25, 1);
+    this.load.tilemap("map", "assets/map.json", null, Phaser.Tilemap.TILED_JSON);
+    this.load.image("dialog", "assets/dialogbox.png");
+  }
+
+  public create():void {
+    var cursors = this.game.input.keyboard.createCursorKeys();
+    game.camera.bounds = null;
+
+    this.map = new GameMap("tilesetkey", "map");
+
+    this.player = new Player(this.game, this.map);
+    this.game.add.existing(this.player);
+
+    var d:Dialog = new Dialog("blah");
+  }
+
+  public update():void {
+    var kb = game.input.keyboard;
+
+    for (var name in this.map.collideableLayers) {
+      this.game.physics.arcade.collide(this.player, this.map.collideableLayers[name]);
+    }
+
+    if (kb.isDown(Phaser.Keyboard.Q)) {
+      this.map.reload();
+    }
+  }
+}
+
 class Entity extends Phaser.Sprite {
   body:Phaser.Physics.Arcade.Body;
 
-  constructor(game:Phaser.Game, x:number, y:number, spritesheet:string, frame:number) {
+  constructor(game:Phaser.Game, x:number, y:number, spritesheet:string, frame:number=0) {
     super(game, x, y, spritesheet, frame);
 
     game.physics.enable(this, Phaser.Physics.ARCADE);
@@ -30,6 +69,25 @@ class Entity extends Phaser.Sprite {
     }
 
     currentState.groups[superclassName].add(this);
+  }
+}
+
+class Dialog extends Phaser.Group {
+  width:number = 300;
+  height:number = 200;
+  border:number = 20;
+
+  constructor(content:string) {
+    super(game);
+
+    this.x = 200;
+    this.y = 200;
+
+    var img:Phaser.Image = this.game.add.image(0, 0, "dialog");
+    this.add(img);
+    content = "asdfasdfasdfasd fasdfasdfasdfasdfasdfasdfas dfasdfasdfasdfasdfasdfasdfasdf";
+    var text:Phaser.Text = this.game.add.text(this.border, this.border, content, {font: '14pt Arial', wordWrap: true, wordWrapWidth: this.width - this.border * 2 });
+    this.add(text);
   }
 }
 
@@ -141,42 +199,6 @@ class GameMap {
       this.collideableLayers[name] = layer;
     }
 
-  }
-}
-
-class MainState extends Phaser.State {
-  groups: {[key: string]: Phaser.Group} = {};
-  player:Player;
-  map:GameMap;
-
-  gg:Phaser.Group;
-
-  public preload():void {
-    this.load.spritesheet("player", "assets/player.png", 25, 25, 1);
-    this.load.spritesheet("tilesetkey", "assets/tileset.png", 25, 25, 1);
-    this.load.tilemap("map", "assets/map.json", null, Phaser.Tilemap.TILED_JSON);
-  }
-
-  public create():void {
-    var cursors = this.game.input.keyboard.createCursorKeys();
-    game.camera.bounds = null;
-
-    this.map = new GameMap("tilesetkey", "map");
-
-    this.player = new Player(this.game, this.map);
-    this.game.add.existing(this.player);
-  }
-
-  public update():void {
-    var kb = game.input.keyboard;
-
-    for (var name in this.map.collideableLayers) {
-      this.game.physics.arcade.collide(this.player, this.map.collideableLayers[name]);
-    }
-
-    if (kb.isDown(Phaser.Keyboard.Q)) {
-      this.map.reload();
-    }
   }
 }
 

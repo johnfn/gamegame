@@ -21,9 +21,49 @@ var C = (function () {
     return C;
 })();
 
+var MainState = (function (_super) {
+    __extends(MainState, _super);
+    function MainState() {
+        _super.apply(this, arguments);
+        this.groups = {};
+    }
+    MainState.prototype.preload = function () {
+        this.load.spritesheet("player", "assets/player.png", 25, 25, 1);
+        this.load.spritesheet("tilesetkey", "assets/tileset.png", 25, 25, 1);
+        this.load.tilemap("map", "assets/map.json", null, Phaser.Tilemap.TILED_JSON);
+        this.load.image("dialog", "assets/dialogbox.png");
+    };
+
+    MainState.prototype.create = function () {
+        var cursors = this.game.input.keyboard.createCursorKeys();
+        game.camera.bounds = null;
+
+        this.map = new GameMap("tilesetkey", "map");
+
+        this.player = new Player(this.game, this.map);
+        this.game.add.existing(this.player);
+
+        var d = new Dialog("blah");
+    };
+
+    MainState.prototype.update = function () {
+        var kb = game.input.keyboard;
+
+        for (var name in this.map.collideableLayers) {
+            this.game.physics.arcade.collide(this.player, this.map.collideableLayers[name]);
+        }
+
+        if (kb.isDown(Phaser.Keyboard.Q)) {
+            this.map.reload();
+        }
+    };
+    return MainState;
+})(Phaser.State);
+
 var Entity = (function (_super) {
     __extends(Entity, _super);
     function Entity(game, x, y, spritesheet, frame) {
+        if (typeof frame === "undefined") { frame = 0; }
         _super.call(this, game, x, y, spritesheet, frame);
 
         game.physics.enable(this, Phaser.Physics.ARCADE);
@@ -40,6 +80,26 @@ var Entity = (function (_super) {
     }
     return Entity;
 })(Phaser.Sprite);
+
+var Dialog = (function (_super) {
+    __extends(Dialog, _super);
+    function Dialog(content) {
+        _super.call(this, game);
+        this.width = 300;
+        this.height = 200;
+        this.border = 20;
+
+        this.x = 200;
+        this.y = 200;
+
+        var img = this.game.add.image(0, 0, "dialog");
+        this.add(img);
+        content = "asdfasdfasdfasd fasdfasdfasdfasdfasdfasdfas dfasdfasdfasdfasdfasdfasdfasdf";
+        var text = this.game.add.text(this.border, this.border, content, { font: '14pt Arial', wordWrap: true, wordWrapWidth: this.width - this.border * 2 });
+        this.add(text);
+    }
+    return Dialog;
+})(Phaser.Group);
 
 var Player = (function (_super) {
     __extends(Player, _super);
@@ -137,42 +197,6 @@ var GameMap = (function () {
     };
     return GameMap;
 })();
-
-var MainState = (function (_super) {
-    __extends(MainState, _super);
-    function MainState() {
-        _super.apply(this, arguments);
-        this.groups = {};
-    }
-    MainState.prototype.preload = function () {
-        this.load.spritesheet("player", "assets/player.png", 25, 25, 1);
-        this.load.spritesheet("tilesetkey", "assets/tileset.png", 25, 25, 1);
-        this.load.tilemap("map", "assets/map.json", null, Phaser.Tilemap.TILED_JSON);
-    };
-
-    MainState.prototype.create = function () {
-        var cursors = this.game.input.keyboard.createCursorKeys();
-        game.camera.bounds = null;
-
-        this.map = new GameMap("tilesetkey", "map");
-
-        this.player = new Player(this.game, this.map);
-        this.game.add.existing(this.player);
-    };
-
-    MainState.prototype.update = function () {
-        var kb = game.input.keyboard;
-
-        for (var name in this.map.collideableLayers) {
-            this.game.physics.arcade.collide(this.player, this.map.collideableLayers[name]);
-        }
-
-        if (kb.isDown(Phaser.Keyboard.Q)) {
-            this.map.reload();
-        }
-    };
-    return MainState;
-})(Phaser.State);
 
 var state = new MainState();
 var game = new Phaser.Game(C.mapWidthInPixels, C.mapHeightInPixels, Phaser.WEBGL, "main", this.state);
