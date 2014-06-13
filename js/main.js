@@ -60,11 +60,14 @@ var MainState = (function (_super) {
     return MainState;
 })(Phaser.State);
 
+;
+
 var Entity = (function (_super) {
     __extends(Entity, _super);
     function Entity(game, x, y, spritesheet, frame) {
         if (typeof frame === "undefined") { frame = 0; }
         _super.call(this, game, x, y, spritesheet, frame);
+        this.listeners = [];
 
         game.physics.enable(this, Phaser.Physics.ARCADE);
 
@@ -78,6 +81,20 @@ var Entity = (function (_super) {
 
         currentState.groups[superclassName].add(this);
     }
+    Entity.prototype.destroy = function () {
+        _super.prototype.destroy.call(this);
+
+        for (var i = 0; i < this.listeners.length; i++) {
+            this.listeners[i].signal.remove(this.listeners[i].callback);
+        }
+    };
+
+    Entity.prototype.press = function (key, cb) {
+        var button = game.input.keyboard.addKey(key);
+        button.onUp.add(cb);
+
+        this.listeners.push({ signal: button.onUp, callback: cb });
+    };
     return Entity;
 })(Phaser.Sprite);
 
@@ -103,8 +120,8 @@ var Dialog = (function (_super) {
 
         this.allDialog = content.slice(0);
 
-        var nextButton = game.input.keyboard.addKey(Phaser.Keyboard.Z);
-        nextButton.onUp.add(this.advanceDialog, this);
+        this.nextButton = game.input.keyboard.addKey(Phaser.Keyboard.Z);
+        this.nextButton.onUp.add(this.advanceDialog, this);
     }
     Dialog.prototype.update = function () {
         if (++this.ticks % this.speed == 0) {
@@ -118,7 +135,8 @@ var Dialog = (function (_super) {
             this.textfield.text = "";
 
             if (this.allDialog.length == 0) {
-                this.destroy();
+                this.destroy(true);
+                this.nextButton.onUp.remove(this.advanceDialog, this);
             }
         }
     };

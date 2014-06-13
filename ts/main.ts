@@ -52,8 +52,14 @@ class MainState extends Phaser.State {
   }
 }
 
+interface KeyListener {
+  signal: Phaser.Signal;
+  callback: Function;
+};
+
 class Entity extends Phaser.Sprite {
   body:Phaser.Physics.Arcade.Body;
+  listeners:KeyListener[] = [];
 
   constructor(game:Phaser.Game, x:number, y:number, spritesheet:string, frame:number=0) {
     super(game, x, y, spritesheet, frame);
@@ -70,6 +76,21 @@ class Entity extends Phaser.Sprite {
 
     currentState.groups[superclassName].add(this);
   }
+
+  destroy() {
+    super.destroy();
+
+    for (var i = 0; i < this.listeners.length; i++) {
+      this.listeners[i].signal.remove(this.listeners[i].callback);
+    }
+  }
+
+  press(key:number, cb:Function) {
+    var button = game.input.keyboard.addKey(key);
+    button.onUp.add(cb);
+
+    this.listeners.push({signal: button.onUp, callback: cb})
+  }
 }
 
 class Dialog extends Phaser.Group {
@@ -82,6 +103,8 @@ class Dialog extends Phaser.Group {
   allDialog:string[];
   img:Phaser.Image;
   textfield:Phaser.Text;
+
+  nextButton:Phaser.Key;
 
   constructor(content:string[], typewriter:boolean = true) {
     super(game);
@@ -97,8 +120,8 @@ class Dialog extends Phaser.Group {
 
     this.allDialog = content.slice(0);
 
-    var nextButton = game.input.keyboard.addKey(Phaser.Keyboard.Z);
-    nextButton.onUp.add(this.advanceDialog, this);
+    this.nextButton = game.input.keyboard.addKey(Phaser.Keyboard.Z);
+    this.nextButton.onUp.add(this.advanceDialog, this);
   }
 
   update():void {
@@ -113,7 +136,8 @@ class Dialog extends Phaser.Group {
       this.textfield.text = "";
 
       if (this.allDialog.length == 0) {
-        this.destroy();
+        this.destroy(true);
+        this.nextButton.onUp.remove(this.advanceDialog, this);
       }
     }
   }
