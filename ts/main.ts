@@ -36,7 +36,7 @@ class MainState extends Phaser.State {
     this.player = new Player(this.game, this.map);
     this.game.add.existing(this.player);
 
-    var d:Dialog = new Dialog("blah");
+    var d:Dialog = new Dialog(["blah bl blahlablahc", "blabla blah."]);
   }
 
   public update():void {
@@ -76,18 +76,46 @@ class Dialog extends Phaser.Group {
   width:number = 300;
   height:number = 200;
   border:number = 20;
+  speed:number = 3;
+  ticks:number = 0;
 
-  constructor(content:string) {
+  allDialog:string[];
+  img:Phaser.Image;
+  textfield:Phaser.Text;
+
+  constructor(content:string[], typewriter:boolean = true) {
     super(game);
 
     this.x = 200;
     this.y = 200;
 
-    var img:Phaser.Image = this.game.add.image(0, 0, "dialog");
-    this.add(img);
-    content = "asdfasdfasdfasd fasdfasdfasdfasdfasdfasdfas dfasdfasdfasdfasdfasdfasdfasdf";
-    var text:Phaser.Text = this.game.add.text(this.border, this.border, content, {font: '14pt Arial', wordWrap: true, wordWrapWidth: this.width - this.border * 2 });
-    this.add(text);
+    this.img = this.game.add.image(0, 0, "dialog");
+    this.add(this.img);
+
+    this.textfield = this.game.add.text(this.border, this.border, "", {font: '14pt Arial', wordWrap: true, wordWrapWidth: this.width - this.border * 2 });
+    this.add(this.textfield);
+
+    this.allDialog = content.slice(0);
+
+    var nextButton = game.input.keyboard.addKey(Phaser.Keyboard.Z);
+    nextButton.onUp.add(this.advanceDialog, this);
+  }
+
+  update():void {
+    if (++this.ticks % this.speed == 0) {
+      this.textfield.text = this.allDialog[0].substring(0, this.textfield.text.length + 1);
+    }
+  }
+
+  advanceDialog():void {
+    if (this.textfield.text.length == this.allDialog[0].length) {
+      this.allDialog.shift();
+      this.textfield.text = "";
+
+      if (this.allDialog.length == 0) {
+        this.destroy();
+      }
+    }
   }
 }
 

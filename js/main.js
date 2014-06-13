@@ -43,7 +43,7 @@ var MainState = (function (_super) {
         this.player = new Player(this.game, this.map);
         this.game.add.existing(this.player);
 
-        var d = new Dialog("blah");
+        var d = new Dialog(["blah bl blahlablahc", "blabla blah."]);
     };
 
     MainState.prototype.update = function () {
@@ -83,21 +83,45 @@ var Entity = (function (_super) {
 
 var Dialog = (function (_super) {
     __extends(Dialog, _super);
-    function Dialog(content) {
+    function Dialog(content, typewriter) {
+        if (typeof typewriter === "undefined") { typewriter = true; }
         _super.call(this, game);
         this.width = 300;
         this.height = 200;
         this.border = 20;
+        this.speed = 3;
+        this.ticks = 0;
 
         this.x = 200;
         this.y = 200;
 
-        var img = this.game.add.image(0, 0, "dialog");
-        this.add(img);
-        content = "asdfasdfasdfasd fasdfasdfasdfasdfasdfasdfas dfasdfasdfasdfasdfasdfasdfasdf";
-        var text = this.game.add.text(this.border, this.border, content, { font: '14pt Arial', wordWrap: true, wordWrapWidth: this.width - this.border * 2 });
-        this.add(text);
+        this.img = this.game.add.image(0, 0, "dialog");
+        this.add(this.img);
+
+        this.textfield = this.game.add.text(this.border, this.border, "", { font: '14pt Arial', wordWrap: true, wordWrapWidth: this.width - this.border * 2 });
+        this.add(this.textfield);
+
+        this.allDialog = content.slice(0);
+
+        var nextButton = game.input.keyboard.addKey(Phaser.Keyboard.Z);
+        nextButton.onUp.add(this.advanceDialog, this);
     }
+    Dialog.prototype.update = function () {
+        if (++this.ticks % this.speed == 0) {
+            this.textfield.text = this.allDialog[0].substring(0, this.textfield.text.length + 1);
+        }
+    };
+
+    Dialog.prototype.advanceDialog = function () {
+        if (this.textfield.text.length == this.allDialog[0].length) {
+            this.allDialog.shift();
+            this.textfield.text = "";
+
+            if (this.allDialog.length == 0) {
+                this.destroy();
+            }
+        }
+    };
     return Dialog;
 })(Phaser.Group);
 
