@@ -32,6 +32,7 @@ var MainState = (function (_super) {
         this.load.spritesheet("tilesetkey", "assets/tileset.png", 25, 25, 1);
         this.load.tilemap("map", "assets/map.json", null, Phaser.Tilemap.TILED_JSON);
         this.load.image("dialog", "assets/dialogbox.png");
+        this.load.spritesheet("npc", "assets/npc.png", 25, 25, 1);
     };
 
     MainState.prototype.create = function () {
@@ -43,7 +44,8 @@ var MainState = (function (_super) {
         this.player = new Player(this.game, this.map);
         this.game.add.existing(this.player);
 
-        var d = new Dialog(["blah bl blahlablahc", "blabla blah."]);
+        this.game.add.existing(new NPC());
+        // var d:Dialog = new Dialog(["blah bl blahlablahc", "blabla blah."]);
     };
 
     MainState.prototype.update = function () {
@@ -71,16 +73,29 @@ var Entity = (function (_super) {
 
         game.physics.enable(this, Phaser.Physics.ARCADE);
 
-        var superclassName = this.constructor.name;
-        var currentState = game.state.getCurrentState();
-        if (!currentState.groups[superclassName]) {
-            var newGroup = game.add.group();
-            currentState.groups[superclassName] = newGroup;
-            this.game.add.existing(newGroup);
-        }
-
-        currentState.groups[superclassName].add(this);
+        this.addToGroups();
     }
+    Entity.prototype.groups = function () {
+        return [this.constructor.name];
+    };
+
+    Entity.prototype.addToGroups = function () {
+        var groups = this.groups();
+        var currentState = game.state.getCurrentState();
+
+        for (var i = 0; i < groups.length; i++) {
+            var groupName = groups[i];
+
+            if (!currentState.groups[groupName]) {
+                var newGroup = game.add.group();
+                currentState.groups[groupName] = newGroup;
+                this.game.add.existing(newGroup);
+            }
+
+            currentState.groups[groupName].add(this);
+        }
+    };
+
     Entity.prototype.destroy = function () {
         _super.prototype.destroy.call(this);
 
@@ -97,6 +112,17 @@ var Entity = (function (_super) {
     };
     return Entity;
 })(Phaser.Sprite);
+
+var NPC = (function (_super) {
+    __extends(NPC, _super);
+    function NPC() {
+        _super.call(this, game, 100, 100, "npc", 0);
+    }
+    NPC.prototype.groups = function () {
+        return _super.prototype.groups.call(this).concat("interactable");
+    };
+    return NPC;
+})(Entity);
 
 var Dialog = (function (_super) {
     __extends(Dialog, _super);

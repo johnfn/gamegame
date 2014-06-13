@@ -25,6 +25,7 @@ class MainState extends Phaser.State {
     this.load.spritesheet("tilesetkey", "assets/tileset.png", 25, 25, 1);
     this.load.tilemap("map", "assets/map.json", null, Phaser.Tilemap.TILED_JSON);
     this.load.image("dialog", "assets/dialogbox.png");
+    this.load.spritesheet("npc", "assets/npc.png", 25, 25, 1);
   }
 
   public create():void {
@@ -36,7 +37,9 @@ class MainState extends Phaser.State {
     this.player = new Player(this.game, this.map);
     this.game.add.existing(this.player);
 
-    var d:Dialog = new Dialog(["blah bl blahlablahc", "blabla blah."]);
+    this.game.add.existing(new NPC());
+
+    // var d:Dialog = new Dialog(["blah bl blahlablahc", "blabla blah."]);
   }
 
   public update():void {
@@ -66,15 +69,28 @@ class Entity extends Phaser.Sprite {
 
     game.physics.enable(this, Phaser.Physics.ARCADE);
 
-    var superclassName:string = <string> (<any> this).constructor.name;
-    var currentState:MainState = (<MainState> game.state.getCurrentState());
-    if (!currentState.groups[superclassName]) {
-      var newGroup:Phaser.Group = game.add.group();
-      currentState.groups[superclassName] = newGroup;
-      this.game.add.existing(newGroup);
-    }
+    this.addToGroups();
+  }
 
-    currentState.groups[superclassName].add(this);
+  groups():string[] {
+    return [<string> (<any> this).constructor.name];
+  }
+
+  private addToGroups():void {
+    var groups:string[] = this.groups();
+    var currentState:MainState = (<MainState> game.state.getCurrentState());
+
+    for (var i = 0; i < groups.length; i++) {
+      var groupName:string = groups[i];
+
+      if (!currentState.groups[groupName]) {
+        var newGroup:Phaser.Group = game.add.group();
+        currentState.groups[groupName] = newGroup;
+        this.game.add.existing(newGroup);
+      }
+
+      currentState.groups[groupName].add(this);
+    }
   }
 
   destroy() {
@@ -90,6 +106,16 @@ class Entity extends Phaser.Sprite {
     button.onUp.add(cb);
 
     this.listeners.push({signal: button.onUp, callback: cb})
+  }
+}
+
+class NPC extends Entity {
+  constructor() {
+    super(game, 100, 100, "npc", 0);
+  }
+
+  groups():string[] {
+    return super.groups().concat("interactable");
   }
 }
 
@@ -142,7 +168,7 @@ class Dialog extends Phaser.Group {
     }
   }
 
-  advanceDialog():void {
+  private advanceDialog():void {
     if (this.textfield.text.length == this.allDialog[0].length) {
       this.allDialog.shift();
       this.textfield.text = "";
