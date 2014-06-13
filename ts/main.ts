@@ -105,6 +105,7 @@ class Dialog extends Phaser.Group {
   textfield:Phaser.Text;
 
   nextButton:Phaser.Key;
+  key:number = Phaser.Keyboard.Z;
 
   constructor(content:string[], typewriter:boolean = true) {
     super(game);
@@ -120,12 +121,23 @@ class Dialog extends Phaser.Group {
 
     this.allDialog = content.slice(0);
 
-    this.nextButton = game.input.keyboard.addKey(Phaser.Keyboard.Z);
-    this.nextButton.onUp.add(this.advanceDialog, this);
+    this.nextButton = game.input.keyboard.addKey(this.key);
+    this.nextButton.onDown.add(this.advanceDialog, this);
+  }
+
+  private getEffectiveSpeed():number {
+    var effectiveSpeed = this.speed;
+
+    if (game.input.keyboard.isDown(this.key)) {
+      effectiveSpeed /= 2;
+      Phaser.Math.clampBottom(effectiveSpeed, 1);
+    }
+
+    return Math.floor(effectiveSpeed);
   }
 
   update():void {
-    if (++this.ticks % this.speed == 0) {
+    if (++this.ticks % this.getEffectiveSpeed() == 0) {
       this.textfield.text = this.allDialog[0].substring(0, this.textfield.text.length + 1);
     }
   }
@@ -137,7 +149,7 @@ class Dialog extends Phaser.Group {
 
       if (this.allDialog.length == 0) {
         this.destroy(true);
-        this.nextButton.onUp.remove(this.advanceDialog, this);
+        this.nextButton.onDown.remove(this.advanceDialog, this);
       }
     }
   }
