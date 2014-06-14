@@ -10,6 +10,13 @@ var g;
 var C = (function () {
     function C() {
     }
+    C.state = function () {
+        return game.state.getCurrentState();
+    };
+
+    C.entityDist = function (a, b) {
+        return Phaser.Math.distance(a.x, a.y, b.x, b.y);
+    };
     C.tileWidth = 25;
     C.tileHeight = 25;
 
@@ -20,6 +27,21 @@ var C = (function () {
     C.mapHeightInPixels = C.mapHeightInTiles * C.tileHeight;
     return C;
 })();
+
+var SuperArrayList = (function (_super) {
+    __extends(SuperArrayList, _super);
+    function SuperArrayList() {
+        _super.apply(this, arguments);
+    }
+    SuperArrayList.prototype.sortByKey = function (key) {
+        this.list.sort(function (a, b) {
+            return key(a) - key(b);
+        });
+
+        return this;
+    };
+    return SuperArrayList;
+})(Phaser.ArrayList);
 
 var MainState = (function (_super) {
     __extends(MainState, _super);
@@ -88,9 +110,8 @@ var Entity = (function (_super) {
             var groupName = groups[i];
 
             if (!currentState.groups[groupName]) {
-                var newGroup = game.add.group();
+                var newGroup = new SuperArrayList();
                 currentState.groups[groupName] = newGroup;
-                this.game.add.existing(newGroup);
             }
 
             currentState.groups[groupName].add(this);
@@ -101,15 +122,15 @@ var Entity = (function (_super) {
         _super.prototype.destroy.call(this);
 
         for (var i = 0; i < this.listeners.length; i++) {
-            this.listeners[i].signal.remove(this.listeners[i].callback);
+            this.listeners[i].signal.remove(this.listeners[i].callback, this.listeners[i].context);
         }
     };
 
-    Entity.prototype.press = function (key, cb) {
+    Entity.prototype.press = function (key, cb, context) {
         var button = game.input.keyboard.addKey(key);
-        button.onUp.add(cb);
+        button.onUp.add(cb, context);
 
-        this.listeners.push({ signal: button.onUp, callback: cb });
+        this.listeners.push({ signal: button.onUp, callback: cb, context: context });
     };
     return Entity;
 })(Phaser.Sprite);
@@ -208,25 +229,19 @@ var Player = (function (_super) {
         this.checkWorldBounds = true;
         this.events.onOutOfBounds.add(this.outOfBounds, this);
 
-        this.press(Phaser.Keyboard.Z, this.zPressed);
+        this.press(Phaser.Keyboard.Z, this.zPressed, this);
     }
     Player.prototype.zPressed = function () {
         var currentState = game.state.getCurrentState();
         var group = currentState.groups["interactable"];
+        var that = this;
+        var closest = group.sortByKey(function (e) {
+            return C.entityDist(that, e);
+        }).first;
 
-        var closestDistance = 99999999;
-        var closestEntity = null;
-
-        group.forEach(function (entity) {
-            var d = Phaser.Math.distance(entity.x, entity.y, this.x, this.y);
-
-            if (d < closestDistance) {
-                closestDistance = d;
-                closestEntity = entity;
-            }
-        }, this);
-
-        console.log(closestDistance);
+        if (C.entityDist(closest, this) < 80) {
+            console.log(closest);
+        }
     };
 
     Player.prototype.outOfBounds = function () {

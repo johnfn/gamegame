@@ -2,6 +2,11 @@
 
 var g:Phaser.Game;
 
+interface Pos {
+  x: number;
+  y: number;
+}
+
 class C {
   static tileWidth:number = 25;
   static tileHeight:number = 25;
@@ -11,11 +16,29 @@ class C {
 
   static mapWidthInPixels:number  = C.mapWidthInTiles * C.tileWidth;
   static mapHeightInPixels:number = C.mapHeightInTiles * C.tileHeight;
+
+  static state():MainState {
+    return (<MainState> game.state.getCurrentState());
+  }
+
+  static entityDist(a: Pos, b:Pos):number {
+    return Phaser.Math.distance(a.x, a.y, b.x, b.y);
+  }
+}
+
+class SuperArrayList extends Phaser.ArrayList {
+  sortByKey(key:(elem: any) => number) {
+    this.list.sort(function(a, b) {
+      return key(a) - key(b);
+    })
+
+    return this;
+  }
 }
 
 class MainState extends Phaser.State {
   // TODO, this has to be something other than PHaser.Group, since Group is the sole parent of a Sprite.
-  groups: {[key: string]: Phaser.Group} = {};
+  groups: {[key: string]: SuperArrayList} = {};
   player:Player;
   map:GameMap;
 
@@ -60,6 +83,7 @@ class MainState extends Phaser.State {
 interface KeyListener {
   signal: Phaser.Signal;
   callback: Function;
+  context: any;
 };
 
 class Entity extends Phaser.Sprite {
@@ -86,9 +110,8 @@ class Entity extends Phaser.Sprite {
       var groupName:string = groups[i];
 
       if (!currentState.groups[groupName]) {
-        var newGroup:Phaser.Group = game.add.group();
+        var newGroup:SuperArrayList = new SuperArrayList();
         currentState.groups[groupName] = newGroup;
-        this.game.add.existing(newGroup);
       }
 
       currentState.groups[groupName].add(this);
@@ -99,15 +122,15 @@ class Entity extends Phaser.Sprite {
     super.destroy();
 
     for (var i = 0; i < this.listeners.length; i++) {
-      this.listeners[i].signal.remove(this.listeners[i].callback);
+      this.listeners[i].signal.remove(this.listeners[i].callback, this.listeners[i].context);
     }
   }
 
-  press(key:number, cb:Function) {
+  press(key:number, cb:Function, context:any) {
     var button = game.input.keyboard.addKey(key);
-    button.onUp.add(cb);
+    button.onUp.add(cb, context);
 
-    this.listeners.push({signal: button.onUp, callback: cb})
+    this.listeners.push({signal: button.onUp, callback: cb, context: context})
   }
 }
 
@@ -208,26 +231,18 @@ class Player extends Entity {
     this.checkWorldBounds = true;
     this.events.onOutOfBounds.add(this.outOfBounds, this);
 
-    this.press(Phaser.Keyboard.Z, this.zPressed);
+    this.press(Phaser.Keyboard.Z, this.zPressed, this);
   }
 
   zPressed():void {
     var currentState:MainState = (<MainState> game.state.getCurrentState());
-    var group:Phaser.Group = currentState.groups["interactable"];
+    var group:SuperArrayList = currentState.groups["interactable"];
+    var that:Entity = this;
+    var closest:Entity = <any> group.sortByKey(function(e:Entity):number { return C.entityDist(that, e); }).first;
 
-    var closestDistance:number = 99999999;
-    var closestEntity:Entity = null
-
-    group.forEach(function(entity:Entity) {
-      var d:number = Phaser.Math.distance(entity.x, entity.y, this.x, this.y);
-
-      if (d < closestDistance) {
-        closestDistance = d;
-        closestEntity = entity;
-      }
-    }, this);
-
-    console.log(closestDistance);
+    if (C.entityDist(closest, this) < 80) {
+      console.log(closest);
+    }
   }
 
   outOfBounds():void {
