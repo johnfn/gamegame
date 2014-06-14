@@ -32,6 +32,7 @@ var MainState = (function (_super) {
         this.load.spritesheet("tilesetkey", "assets/tileset.png", 25, 25, 1);
         this.load.tilemap("map", "assets/map.json", null, Phaser.Tilemap.TILED_JSON);
         this.load.image("dialog", "assets/dialogbox.png");
+        this.load.image("indicator", "assets/indicator.png");
         this.load.spritesheet("npc", "assets/npc.png", 25, 25, 1);
     };
 
@@ -66,9 +67,8 @@ var MainState = (function (_super) {
 
 var Entity = (function (_super) {
     __extends(Entity, _super);
-    function Entity(game, x, y, spritesheet, frame) {
-        if (typeof frame === "undefined") { frame = 0; }
-        _super.call(this, game, x, y, spritesheet, frame);
+    function Entity(spritesheet) {
+        _super.call(this, game, 0, 0, spritesheet, 0);
         this.listeners = [];
 
         game.physics.enable(this, Phaser.Physics.ARCADE);
@@ -116,7 +116,10 @@ var Entity = (function (_super) {
 var NPC = (function (_super) {
     __extends(NPC, _super);
     function NPC() {
-        _super.call(this, game, 100, 100, "npc", 0);
+        _super.call(this, "npc");
+
+        this.x = 100;
+        this.y = 100;
     }
     NPC.prototype.groups = function () {
         return _super.prototype.groups.call(this).concat("interactable");
@@ -184,8 +187,10 @@ var Dialog = (function (_super) {
 var Player = (function (_super) {
     __extends(Player, _super);
     function Player(game, map) {
-        _super.call(this, game, 50, 50, "player", 0);
+        _super.call(this, "player");
         this.speed = 300;
+
+        this.x = this.y = 50;
 
         this.body.drag.x = 1000;
         this.body.drag.y = 1000;
@@ -193,7 +198,26 @@ var Player = (function (_super) {
         this.map = map;
         this.checkWorldBounds = true;
         this.events.onOutOfBounds.add(this.outOfBounds, this);
+
+        this.press(Phaser.Keyboard.Z, this.zPressed);
     }
+    Player.prototype.zPressed = function () {
+        var currentState = game.state.getCurrentState();
+        var group = currentState.groups["interactable"];
+
+        var closestDistance = 99999999;
+        var closestEntity = null;
+
+        group.forEach(function (entity) {
+            var d = Phaser.Math.distance(entity.x, entity.y, this.x, this.y);
+
+            if (d < closestDistance) {
+                closestDistance = d;
+                closestEntity = entity;
+            }
+        }, this);
+    };
+
     Player.prototype.outOfBounds = function () {
         var normalizedX = this.x - this.map.mapX;
         var normalizedY = this.y - this.map.mapY;

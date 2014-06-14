@@ -25,6 +25,7 @@ class MainState extends Phaser.State {
     this.load.spritesheet("tilesetkey", "assets/tileset.png", 25, 25, 1);
     this.load.tilemap("map", "assets/map.json", null, Phaser.Tilemap.TILED_JSON);
     this.load.image("dialog", "assets/dialogbox.png");
+    this.load.image("indicator", "assets/indicator.png");
     this.load.spritesheet("npc", "assets/npc.png", 25, 25, 1);
   }
 
@@ -64,8 +65,8 @@ class Entity extends Phaser.Sprite {
   body:Phaser.Physics.Arcade.Body;
   listeners:KeyListener[] = [];
 
-  constructor(game:Phaser.Game, x:number, y:number, spritesheet:string, frame:number=0) {
-    super(game, x, y, spritesheet, frame);
+  constructor(spritesheet:string) {
+    super(game, 0, 0, spritesheet, 0);
 
     game.physics.enable(this, Phaser.Physics.ARCADE);
 
@@ -111,7 +112,10 @@ class Entity extends Phaser.Sprite {
 
 class NPC extends Entity {
   constructor() {
-    super(game, 100, 100, "npc", 0);
+    super("npc");
+
+    this.x = 100;
+    this.y = 100;
   }
 
   groups():string[] {
@@ -186,7 +190,9 @@ class Player extends Entity {
   map:GameMap;
 
   constructor(game:Phaser.Game, map:GameMap) {
-    super(game, 50, 50, "player", 0);
+    super("player");
+
+    this.x = this.y = 50;
 
     (<any> this.body).drag.x = 1000;
     (<any> this.body).drag.y = 1000;
@@ -194,6 +200,27 @@ class Player extends Entity {
     this.map = map;
     this.checkWorldBounds = true;
     this.events.onOutOfBounds.add(this.outOfBounds, this);
+
+    this.press(Phaser.Keyboard.Z, this.zPressed);
+  }
+
+  zPressed():void {
+    var currentState:MainState = (<MainState> game.state.getCurrentState());
+    var group:Phaser.Group = currentState.groups["interactable"];
+
+    var closestDistance:number = 99999999;
+    var closestEntity:Entity = null
+
+    group.forEach(function(entity:Entity) {
+      var d:number = Phaser.Math.distance(entity.x, entity.y, this.x, this.y);
+
+      if (d < closestDistance) {
+        closestDistance = d;
+        closestEntity = entity;
+      }
+    }, this);
+
+
   }
 
   outOfBounds():void {
