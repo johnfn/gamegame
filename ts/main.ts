@@ -14,6 +14,7 @@ class C {
 }
 
 class MainState extends Phaser.State {
+  // TODO, this has to be something other than PHaser.Group, since Group is the sole parent of a Sprite.
   groups: {[key: string]: Phaser.Group} = {};
   player:Player;
   map:GameMap;
@@ -107,6 +108,12 @@ class Entity extends Phaser.Sprite {
     button.onUp.add(cb);
 
     this.listeners.push({signal: button.onUp, callback: cb})
+  }
+}
+
+class Indicator extends Entity {
+  constructor() {
+    super("indicator");
   }
 }
 
@@ -220,7 +227,7 @@ class Player extends Entity {
       }
     }, this);
 
-
+    console.log(closestDistance);
   }
 
   outOfBounds():void {

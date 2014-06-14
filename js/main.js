@@ -25,6 +25,7 @@ var MainState = (function (_super) {
     __extends(MainState, _super);
     function MainState() {
         _super.apply(this, arguments);
+        // TODO, this has to be something other than PHaser.Group, since Group is the sole parent of a Sprite.
         this.groups = {};
     }
     MainState.prototype.preload = function () {
@@ -112,6 +113,14 @@ var Entity = (function (_super) {
     };
     return Entity;
 })(Phaser.Sprite);
+
+var Indicator = (function (_super) {
+    __extends(Indicator, _super);
+    function Indicator() {
+        _super.call(this, "indicator");
+    }
+    return Indicator;
+})(Entity);
 
 var NPC = (function (_super) {
     __extends(NPC, _super);
@@ -216,6 +225,8 @@ var Player = (function (_super) {
                 closestEntity = entity;
             }
         }, this);
+
+        console.log(closestDistance);
     };
 
     Player.prototype.outOfBounds = function () {
