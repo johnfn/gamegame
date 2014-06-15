@@ -69,8 +69,6 @@ var MainState = (function (_super) {
         this.game.add.existing(this.player);
 
         this.game.add.existing(new NPC());
-
-        this.game.add.existing(new Indicator(this.player));
         // var d:Dialog = new Dialog(["blah bl blahlablahc", "blabla blah."]);
     };
 
@@ -158,6 +156,7 @@ var Indicator = (function (_super) {
             this.y = closest.y - 10;
         }
 
+        this.target = (showIndicator ? closest : null);
         this.visible = showIndicator;
     };
     return Indicator;
@@ -167,10 +166,15 @@ var NPC = (function (_super) {
     __extends(NPC, _super);
     function NPC() {
         _super.call(this, "npc");
+        this.description = "Talk";
 
         this.x = 100;
         this.y = 100;
     }
+    NPC.prototype.interact = function () {
+        var d = new Dialog(["blah bl blahlablahc", "blabla blah."]);
+    };
+
     NPC.prototype.groups = function () {
         return _super.prototype.groups.call(this).concat("interactable");
     };
@@ -245,13 +249,15 @@ var Player = (function (_super) {
         this.body.drag.x = 1000;
         this.body.drag.y = 1000;
 
+        this.game.add.existing(this.indicator = new Indicator(this));
         this.map = map;
         this.checkWorldBounds = true;
         this.events.onOutOfBounds.add(this.outOfBounds, this);
 
-        this.press(Phaser.Keyboard.Z, this.zPressed, this);
+        this.press(Phaser.Keyboard.X, this.xPressed, this);
     }
-    Player.prototype.zPressed = function () {
+    Player.prototype.xPressed = function () {
+        this.indicator.target.interact();
     };
 
     Player.prototype.outOfBounds = function () {

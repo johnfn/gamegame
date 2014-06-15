@@ -64,8 +64,6 @@ class MainState extends Phaser.State {
 
     this.game.add.existing(new NPC());
 
-    this.game.add.existing(new Indicator(this.player));
-
     // var d:Dialog = new Dialog(["blah bl blahlablahc", "blabla blah."]);
   }
 
@@ -80,6 +78,11 @@ class MainState extends Phaser.State {
       this.map.reload();
     }
   }
+}
+
+interface Interactable {
+  interact: () => void;
+  description: string;
 }
 
 interface KeyListener {
@@ -138,6 +141,7 @@ class Entity extends Phaser.Sprite {
 
 class Indicator extends Entity {
   player:Player;
+  target:Interactable;
 
   constructor(player) {
     super("indicator");
@@ -156,16 +160,23 @@ class Indicator extends Entity {
       this.y = closest.y - 10;
     }
 
+    this.target = <Interactable> (showIndicator ? <any> closest: null);
     this.visible = showIndicator;
   }
 }
 
-class NPC extends Entity {
+class NPC extends Entity implements Interactable {
+  description:string = "Talk";
+
   constructor() {
     super("npc");
 
     this.x = 100;
     this.y = 100;
+  }
+
+  interact(): void {
+    var d:Dialog = new Dialog(["blah bl blahlablahc", "blabla blah."]);
   }
 
   groups():string[] {
@@ -238,6 +249,7 @@ class Dialog extends Phaser.Group {
 class Player extends Entity {
   speed:number = 300;
   map:GameMap;
+  indicator:Indicator;
 
   constructor(game:Phaser.Game, map:GameMap) {
     super("player");
@@ -247,14 +259,16 @@ class Player extends Entity {
     (<any> this.body).drag.x = 1000;
     (<any> this.body).drag.y = 1000;
 
+    this.game.add.existing(this.indicator = new Indicator(this));
     this.map = map;
     this.checkWorldBounds = true;
     this.events.onOutOfBounds.add(this.outOfBounds, this);
 
-    this.press(Phaser.Keyboard.Z, this.zPressed, this);
+    this.press(Phaser.Keyboard.X, this.xPressed, this);
   }
 
-  zPressed():void {
+  xPressed():void {
+    this.indicator.target.interact();
   }
 
   outOfBounds():void {
