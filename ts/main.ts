@@ -65,10 +65,7 @@ class MainState extends Phaser.State {
     this.game.add.existing(this.player);
 
     this.game.add.existing(this.indicator = new Indicator(this.player));
-
     this.game.add.existing(this.hud = new HUD(this.indicator));
-
-    this.player.indicator = this.indicator;
 
     // var d:Dialog = new Dialog(["blah bl blahlablahc", "blabla blah."]);
   }
@@ -177,6 +174,12 @@ class Indicator extends Entity {
 
     this.player = player;
     this.visible = false;
+
+    this.press(Phaser.Keyboard.X, this.xPressed, this);
+  }
+
+  xPressed():void {
+    this.target.interact();
   }
 
   update() {
@@ -279,7 +282,6 @@ class Dialog extends Phaser.Group {
 class Player extends Entity {
   speed:number = 300;
   map:GameMap;
-  indicator:Indicator;
 
   constructor(game:Phaser.Game, map:GameMap) {
     super("player");
@@ -292,12 +294,6 @@ class Player extends Entity {
     this.map = map;
     this.checkWorldBounds = true;
     this.events.onOutOfBounds.add(this.outOfBounds, this);
-
-    this.press(Phaser.Keyboard.X, this.xPressed, this);
-  }
-
-  xPressed():void {
-    this.indicator.target.interact();
   }
 
   outOfBounds():void {

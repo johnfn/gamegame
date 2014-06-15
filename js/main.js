@@ -70,10 +70,7 @@ var MainState = (function (_super) {
         this.game.add.existing(this.player);
 
         this.game.add.existing(this.indicator = new Indicator(this.player));
-
         this.game.add.existing(this.hud = new HUD(this.indicator));
-
-        this.player.indicator = this.indicator;
         // var d:Dialog = new Dialog(["blah bl blahlablahc", "blabla blah."]);
     };
 
@@ -167,7 +164,13 @@ var Indicator = (function (_super) {
 
         this.player = player;
         this.visible = false;
+
+        this.press(Phaser.Keyboard.X, this.xPressed, this);
     }
+    Indicator.prototype.xPressed = function () {
+        this.target.interact();
+    };
+
     Indicator.prototype.update = function () {
         var _this = this;
         var group = C.state().groups["interactable"];
@@ -278,13 +281,7 @@ var Player = (function (_super) {
         this.map = map;
         this.checkWorldBounds = true;
         this.events.onOutOfBounds.add(this.outOfBounds, this);
-
-        this.press(Phaser.Keyboard.X, this.xPressed, this);
     }
-    Player.prototype.xPressed = function () {
-        this.indicator.target.interact();
-    };
-
     Player.prototype.outOfBounds = function () {
         var normalizedX = this.x - this.map.mapX;
         var normalizedY = this.y - this.map.mapY;
