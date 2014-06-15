@@ -147,7 +147,7 @@ class MainState extends Phaser.State {
       this.map.reload();
     }
 
-    var closest:Entity = <any> this.groups["Monster"].sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first;
+    var closest:Monster = this.groups.get(Monster).sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first();
   }
 }
 
@@ -276,8 +276,8 @@ class Indicator extends Entity {
   }
 
   update() {
-    var group:SuperArrayList = C.state().groups["interactable"];
-    var closest:Entity = <any> group.sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first;
+    var group:List<Interactable> = C.state().groups.get(Interactable);
+    var closest:Entity = group.sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first;
     var showIndicator = (C.entityDist(closest, this.player) < 80);
 
     if (showIndicator) {

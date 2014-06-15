@@ -70,7 +70,7 @@ return this;
 */
 // Groups is essentially a typesystem hack to make a dictionary that maps keys of any type to values
 // which are lists of that same type. afaik there's no way for a type system to verify this, unless it's haskell.
-// Using it is typesafe (though obviously the implementation isn't.)
+// Using it is typesafe (though obviously the implementation isn't).
 //
 // usage:
 // var g:Groups = new Groups();
@@ -143,9 +143,9 @@ var MainState = (function (_super) {
             this.map.reload();
         }
 
-        var closest = this.groups["Monster"].sortByKey(function (e) {
+        var closest = this.groups.get(Monster).sortByKey(function (e) {
             return C.entityDist(_this.player, e);
-        }).first;
+        }).first();
     };
     return MainState;
 })(Phaser.State);
@@ -259,7 +259,7 @@ var Indicator = (function (_super) {
 
     Indicator.prototype.update = function () {
         var _this = this;
-        var group = C.state().groups["interactable"];
+        var group = C.state().groups.get(Interactable);
         var closest = group.sortByKey(function (e) {
             return C.entityDist(_this.player, e);
         }).first;
