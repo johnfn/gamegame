@@ -37,12 +37,12 @@ class SuperArrayList extends Phaser.ArrayList {
 }
 
 class MainState extends Phaser.State {
-  // TODO, this has to be something other than PHaser.Group, since Group is the sole parent of a Sprite.
   groups: {[key: string]: SuperArrayList} = {};
+
   player:Player;
   map:GameMap;
-
-  gg:Phaser.Group;
+  indicator:Indicator;
+  hud:HUD;
 
   public preload():void {
     this.load.spritesheet("player", "assets/player.png", 25, 25, 1);
@@ -59,10 +59,16 @@ class MainState extends Phaser.State {
 
     this.map = new GameMap("tilesetkey", "map");
 
+    this.game.add.existing(new NPC());
+
     this.player = new Player(this.game, this.map);
     this.game.add.existing(this.player);
 
-    this.game.add.existing(new NPC());
+    this.game.add.existing(this.indicator = new Indicator(this.player));
+
+    this.game.add.existing(this.hud = new HUD(this.indicator));
+
+    this.player.indicator = this.indicator;
 
     // var d:Dialog = new Dialog(["blah bl blahlablahc", "blabla blah."]);
   }
@@ -76,6 +82,29 @@ class MainState extends Phaser.State {
 
     if (kb.isDown(Phaser.Keyboard.Q)) {
       this.map.reload();
+    }
+  }
+}
+
+class HUD extends Phaser.Group {
+  indicator: Indicator;
+
+  buttonText:Phaser.Text;
+
+  constructor(indicator:Indicator) {
+    super(game);
+
+    this.indicator = indicator;
+    this.buttonText = this.add(new Phaser.Text(game, 5, 5 ,"X button to DIE", {font: "14 pt Arial"}));
+  }
+
+  update():void {
+    var target = this.indicator.target;
+
+    if (target) {
+      this.buttonText.text = "X to " + target.description;
+    } else {
+      this.buttonText.text = "X to literally die."
     }
   }
 }
@@ -246,6 +275,7 @@ class Dialog extends Phaser.Group {
   }
 }
 
+// circular dependency between player and HUD...
 class Player extends Entity {
   speed:number = 300;
   map:GameMap;
@@ -259,7 +289,6 @@ class Player extends Entity {
     (<any> this.body).drag.x = 1000;
     (<any> this.body).drag.y = 1000;
 
-    this.game.add.existing(this.indicator = new Indicator(this));
     this.map = map;
     this.checkWorldBounds = true;
     this.events.onOutOfBounds.add(this.outOfBounds, this);

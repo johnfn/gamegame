@@ -47,7 +47,6 @@ var MainState = (function (_super) {
     __extends(MainState, _super);
     function MainState() {
         _super.apply(this, arguments);
-        // TODO, this has to be something other than PHaser.Group, since Group is the sole parent of a Sprite.
         this.groups = {};
     }
     MainState.prototype.preload = function () {
@@ -65,10 +64,16 @@ var MainState = (function (_super) {
 
         this.map = new GameMap("tilesetkey", "map");
 
+        this.game.add.existing(new NPC());
+
         this.player = new Player(this.game, this.map);
         this.game.add.existing(this.player);
 
-        this.game.add.existing(new NPC());
+        this.game.add.existing(this.indicator = new Indicator(this.player));
+
+        this.game.add.existing(this.hud = new HUD(this.indicator));
+
+        this.player.indicator = this.indicator;
         // var d:Dialog = new Dialog(["blah bl blahlablahc", "blabla blah."]);
     };
 
@@ -85,6 +90,26 @@ var MainState = (function (_super) {
     };
     return MainState;
 })(Phaser.State);
+
+var HUD = (function (_super) {
+    __extends(HUD, _super);
+    function HUD(indicator) {
+        _super.call(this, game);
+
+        this.indicator = indicator;
+        this.buttonText = this.add(new Phaser.Text(game, 5, 5, "X button to DIE", { font: "14 pt Arial" }));
+    }
+    HUD.prototype.update = function () {
+        var target = this.indicator.target;
+
+        if (target) {
+            this.buttonText.text = "X to " + target.description;
+        } else {
+            this.buttonText.text = "X to literally die.";
+        }
+    };
+    return HUD;
+})(Phaser.Group);
 
 ;
 
@@ -238,6 +263,7 @@ var Dialog = (function (_super) {
     return Dialog;
 })(Phaser.Group);
 
+// circular dependency between player and HUD...
 var Player = (function (_super) {
     __extends(Player, _super);
     function Player(game, map) {
@@ -249,7 +275,6 @@ var Player = (function (_super) {
         this.body.drag.x = 1000;
         this.body.drag.y = 1000;
 
-        this.game.add.existing(this.indicator = new Indicator(this));
         this.map = map;
         this.checkWorldBounds = true;
         this.events.onOutOfBounds.add(this.outOfBounds, this);
