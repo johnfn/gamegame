@@ -69,6 +69,8 @@ var MainState = (function (_super) {
         this.game.add.existing(this.player);
 
         this.game.add.existing(new NPC());
+
+        this.game.add.existing(new Indicator(this.player));
         // var d:Dialog = new Dialog(["blah bl blahlablahc", "blabla blah."]);
     };
 
@@ -137,9 +139,27 @@ var Entity = (function (_super) {
 
 var Indicator = (function (_super) {
     __extends(Indicator, _super);
-    function Indicator() {
+    function Indicator(player) {
         _super.call(this, "indicator");
+
+        this.player = player;
+        this.visible = false;
     }
+    Indicator.prototype.update = function () {
+        var _this = this;
+        var group = C.state().groups["interactable"];
+        var closest = group.sortByKey(function (e) {
+            return C.entityDist(_this.player, e);
+        }).first;
+        var showIndicator = (C.entityDist(closest, this.player) < 80);
+
+        if (showIndicator) {
+            this.x = closest.x;
+            this.y = closest.y - 10;
+        }
+
+        this.visible = showIndicator;
+    };
     return Indicator;
 })(Entity);
 
@@ -232,16 +252,6 @@ var Player = (function (_super) {
         this.press(Phaser.Keyboard.Z, this.zPressed, this);
     }
     Player.prototype.zPressed = function () {
-        var currentState = game.state.getCurrentState();
-        var group = currentState.groups["interactable"];
-        var that = this;
-        var closest = group.sortByKey(function (e) {
-            return C.entityDist(that, e);
-        }).first;
-
-        if (C.entityDist(closest, this) < 80) {
-            console.log(closest);
-        }
     };
 
     Player.prototype.outOfBounds = function () {

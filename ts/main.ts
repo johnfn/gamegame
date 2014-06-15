@@ -64,6 +64,8 @@ class MainState extends Phaser.State {
 
     this.game.add.existing(new NPC());
 
+    this.game.add.existing(new Indicator(this.player));
+
     // var d:Dialog = new Dialog(["blah bl blahlablahc", "blabla blah."]);
   }
 
@@ -135,8 +137,26 @@ class Entity extends Phaser.Sprite {
 }
 
 class Indicator extends Entity {
-  constructor() {
+  player:Player;
+
+  constructor(player) {
     super("indicator");
+
+    this.player = player;
+    this.visible = false;
+  }
+
+  update() {
+    var group:SuperArrayList = C.state().groups["interactable"];
+    var closest:Entity = <any> group.sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first;
+    var showIndicator = (C.entityDist(closest, this.player) < 80);
+
+    if (showIndicator) {
+      this.x = closest.x;
+      this.y = closest.y - 10;
+    }
+
+    this.visible = showIndicator;
   }
 }
 
@@ -235,14 +255,6 @@ class Player extends Entity {
   }
 
   zPressed():void {
-    var currentState:MainState = (<MainState> game.state.getCurrentState());
-    var group:SuperArrayList = currentState.groups["interactable"];
-    var that:Entity = this;
-    var closest:Entity = <any> group.sortByKey(function(e:Entity):number { return C.entityDist(that, e); }).first;
-
-    if (C.entityDist(closest, this) < 80) {
-      console.log(closest);
-    }
   }
 
   outOfBounds():void {
