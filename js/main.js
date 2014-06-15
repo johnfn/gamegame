@@ -28,26 +28,80 @@ var C = (function () {
     return C;
 })();
 
-var SuperArrayList = (function (_super) {
-    __extends(SuperArrayList, _super);
-    function SuperArrayList() {
-        _super.apply(this, arguments);
+var List = (function () {
+    function List() {
+        this.contents = [];
     }
-    SuperArrayList.prototype.sortByKey = function (key) {
-        this.list.sort(function (a, b) {
+    List.prototype.get = function (i) {
+        return this.contents[i];
+    };
+
+    List.prototype.set = function (i, value) {
+        this.contents[i] = value;
+    };
+
+    List.prototype.push = function (value) {
+        this.contents.push(value);
+    };
+
+    List.prototype.sortByKey = function (key) {
+        this.contents.sort(function (a, b) {
             return key(a) - key(b);
         });
 
         return this;
     };
-    return SuperArrayList;
-})(Phaser.ArrayList);
+
+    List.prototype.first = function () {
+        return this.contents[0];
+    };
+    return List;
+})();
+
+/*
+class SuperArrayList extends Phaser.ArrayList {
+sortByKey(key:(elem: any) => number) {
+this.list.sort(function(a, b) {
+return key(a) - key(b);
+})
+return this;
+}
+}
+*/
+// Groups is essentially a typesystem hack to make a dictionary that maps keys of any type to values
+// which are lists of that same type. afaik there's no way for a type system to verify this, unless it's haskell.
+// Using it is typesafe (though obviously the implementation isn't.)
+//
+// usage:
+// var g:Groups = new Groups();
+// g.put(p = new Player());
+// g.put(a = new Entity());
+// console.log(g.get(Entity).first == a); // true
+var Groups = (function () {
+    function Groups() {
+        this.dict = {};
+    }
+    Groups.prototype.put = function (value) {
+        var typename = value.constructor.name;
+        if (!(typename in this.dict))
+            this.dict[typename] = new List();
+
+        this.dict[typename].push(value);
+    };
+
+    Groups.prototype.get = function (object) {
+        var typename = object.prototype.constructor.name;
+
+        return this.dict[typename];
+    };
+    return Groups;
+})();
 
 var MainState = (function (_super) {
     __extends(MainState, _super);
     function MainState() {
         _super.apply(this, arguments);
-        this.groups = {};
+        this.groups = new Groups();
     }
     MainState.prototype.preload = function () {
         this.load.spritesheet("player", "assets/player.png", 25, 25, 1);
@@ -56,6 +110,7 @@ var MainState = (function (_super) {
         this.load.image("dialog", "assets/dialogbox.png");
         this.load.image("indicator", "assets/indicator.png");
         this.load.spritesheet("npc", "assets/npc.png", 25, 25, 1);
+        this.load.spritesheet("monster", "assets/monster.png", 25, 25, 1);
     };
 
     MainState.prototype.create = function () {
@@ -64,17 +119,20 @@ var MainState = (function (_super) {
 
         this.map = new GameMap("tilesetkey", "map");
 
-        this.game.add.existing(new NPC());
-
+        //this.game.add.existing(new NPC());
         this.player = new Player(this.game, this.map);
         this.game.add.existing(this.player);
 
         this.game.add.existing(this.indicator = new Indicator(this.player));
         this.game.add.existing(this.hud = new HUD(this.indicator));
-        // var d:Dialog = new Dialog(["blah bl blahlablahc", "blabla blah."]);
+        this.game.add.existing(this.monster = new Monster());
+    };
+
+    MainState.prototype.getGroup = function (e) {
     };
 
     MainState.prototype.update = function () {
+        var _this = this;
         var kb = game.input.keyboard;
 
         for (var name in this.map.collideableLayers) {
@@ -84,6 +142,10 @@ var MainState = (function (_super) {
         if (kb.isDown(Phaser.Keyboard.Q)) {
             this.map.reload();
         }
+
+        var closest = this.groups["Monster"].sortByKey(function (e) {
+            return C.entityDist(_this.player, e);
+        }).first;
     };
     return MainState;
 })(Phaser.State);
@@ -156,6 +218,30 @@ var Entity = (function (_super) {
     };
     return Entity;
 })(Phaser.Sprite);
+
+var BaseMonster = (function (_super) {
+    __extends(BaseMonster, _super);
+    function BaseMonster(asset) {
+        _super.call(this, asset);
+
+        this.p = C.state().groups["Player"].first;
+    }
+    return BaseMonster;
+})(Entity);
+
+var Monster = (function (_super) {
+    __extends(Monster, _super);
+    function Monster() {
+        _super.call(this, "monster");
+    }
+    Monster.prototype.damage = function (amount) {
+        return _super.prototype.damage.call(this, amount);
+    };
+
+    Monster.prototype.update = function () {
+    };
+    return Monster;
+})(BaseMonster);
 
 var Indicator = (function (_super) {
     __extends(Indicator, _super);
@@ -274,7 +360,6 @@ var Dialog = (function (_super) {
     return Dialog;
 })(Phaser.Group);
 
-// circular dependency between player and HUD...
 var Player = (function (_super) {
     __extends(Player, _super);
     function Player(game, map) {

@@ -26,6 +26,39 @@ class C {
   }
 }
 
+class List<T> {
+  contents:T[];
+
+  constructor() {
+    this.contents = [];
+  }
+
+  get(i:number):T {
+    return this.contents[i];
+  }
+
+  set(i:number, value:T) {
+    this.contents[i] = value;
+  }
+
+  push(value:T) {
+    this.contents.push(value);
+  }
+
+  sortByKey(key:(elem: any) => number):List<T> {
+    this.contents.sort(function(a, b) {
+      return key(a) - key(b);
+    })
+
+    return this;
+  }
+
+  first():T {
+    return this.contents[0];
+  }
+}
+
+/*
 class SuperArrayList extends Phaser.ArrayList {
   sortByKey(key:(elem: any) => number) {
     this.list.sort(function(a, b) {
@@ -35,14 +68,43 @@ class SuperArrayList extends Phaser.ArrayList {
     return this;
   }
 }
+*/
+
+// Groups is essentially a typesystem hack to make a dictionary that maps keys of any type to values
+// which are lists of that same type. afaik there's no way for a type system to verify this, unless it's haskell.
+// Using it is typesafe (though obviously the implementation isn't).
+//
+// usage:
+// var g:Groups = new Groups();
+// g.put(p = new Player());
+// g.put(a = new Entity());
+// console.log(g.get(Entity).first == a); // true
+
+class Groups {
+  dict: {[key: string]: any} = {};
+
+  public put<T>(value:T) {
+    var typename:string = (<any> value).constructor.name;
+    if (!(typename in this.dict)) this.dict[typename] = new List<T>();
+
+    this.dict[typename].push(value);
+  }
+
+  public get<T>(object:T):List<T> {
+    var typename:string = (<any> object).prototype.constructor.name;
+
+    return <List<T>> this.dict[typename];
+  }
+}
 
 class MainState extends Phaser.State {
-  groups: {[key: string]: SuperArrayList} = {};
+  groups:Groups = new Groups();
 
   player:Player;
   map:GameMap;
   indicator:Indicator;
   hud:HUD;
+  monster:Monster;
 
   public preload():void {
     this.load.spritesheet("player", "assets/player.png", 25, 25, 1);
@@ -51,6 +113,7 @@ class MainState extends Phaser.State {
     this.load.image("dialog", "assets/dialogbox.png");
     this.load.image("indicator", "assets/indicator.png");
     this.load.spritesheet("npc", "assets/npc.png", 25, 25, 1);
+    this.load.spritesheet("monster", "assets/monster.png", 25, 25, 1);
   }
 
   public create():void {
@@ -59,15 +122,18 @@ class MainState extends Phaser.State {
 
     this.map = new GameMap("tilesetkey", "map");
 
-    this.game.add.existing(new NPC());
+    //this.game.add.existing(new NPC());
 
     this.player = new Player(this.game, this.map);
     this.game.add.existing(this.player);
 
     this.game.add.existing(this.indicator = new Indicator(this.player));
     this.game.add.existing(this.hud = new HUD(this.indicator));
+    this.game.add.existing(this.monster = new Monster());
+  }
 
-    // var d:Dialog = new Dialog(["blah bl blahlablahc", "blabla blah."]);
+  public getGroup<T>(e:T):T {
+
   }
 
   public update():void {
@@ -80,6 +146,8 @@ class MainState extends Phaser.State {
     if (kb.isDown(Phaser.Keyboard.Q)) {
       this.map.reload();
     }
+
+    var closest:Entity = <any> this.groups["Monster"].sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first;
   }
 }
 
@@ -163,6 +231,30 @@ class Entity extends Phaser.Sprite {
     button.onUp.add(cb, context);
 
     this.listeners.push({signal: button.onUp, callback: cb, context: context})
+  }
+}
+
+class BaseMonster extends Entity {
+  p:Player;
+
+  constructor(asset:string) {
+    super(asset);
+
+    this.p = <Player> C.state().groups["Player"].first;
+  }
+}
+
+class Monster extends BaseMonster {
+  constructor() {
+    super("monster");
+  }
+
+  damage(amount:number) {
+    return super.damage(amount);
+  }
+
+  update():void {
+
   }
 }
 
@@ -289,7 +381,6 @@ class Dialog extends Phaser.Group implements Interactable {
   }
 }
 
-// circular dependency between player and HUD...
 class Player extends Entity {
   speed:number = 300;
   map:GameMap;
