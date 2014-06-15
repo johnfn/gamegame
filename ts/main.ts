@@ -109,6 +109,7 @@ class HUD extends Phaser.Group {
 interface Interactable {
   interact: () => void;
   description: string;
+  distanceToInteract: number;
 }
 
 interface KeyListener {
@@ -199,6 +200,7 @@ class Indicator extends Entity {
 
 class NPC extends Entity implements Interactable {
   description:string = "Talk";
+  distanceToInteract = 80;
 
   constructor() {
     super("npc");
@@ -216,12 +218,14 @@ class NPC extends Entity implements Interactable {
   }
 }
 
-class Dialog extends Phaser.Group {
+class Dialog extends Phaser.Group implements Interactable {
   width:number = 300;
   height:number = 200;
   border:number = 20;
-  speed:number = 3;
   ticks:number = 0;
+
+  baseSpeed:number = 3;
+  effectiveSpeed:number = 3;
 
   allDialog:string[];
   img:Phaser.Image;
@@ -248,8 +252,15 @@ class Dialog extends Phaser.Group {
     this.nextButton.onDown.add(this.advanceDialog, this);
   }
 
+  description:string = "Advance";
+  distanceToInteract:number = Infinity;
+
+  interact() {
+    // TODO
+  }
+
   private getEffectiveSpeed():number {
-    var effectiveSpeed = this.speed;
+    var effectiveSpeed = this.baseSpeed;
 
     if (game.input.keyboard.isDown(this.key)) {
       effectiveSpeed /= 2;

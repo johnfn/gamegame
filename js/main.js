@@ -195,6 +195,7 @@ var NPC = (function (_super) {
     function NPC() {
         _super.call(this, "npc");
         this.description = "Talk";
+        this.distanceToInteract = 80;
 
         this.x = 100;
         this.y = 100;
@@ -217,9 +218,12 @@ var Dialog = (function (_super) {
         this.width = 300;
         this.height = 200;
         this.border = 20;
-        this.speed = 3;
         this.ticks = 0;
+        this.baseSpeed = 3;
+        this.effectiveSpeed = 3;
         this.key = Phaser.Keyboard.Z;
+        this.description = "Advance";
+        this.distanceToInteract = Infinity;
 
         this.x = 200;
         this.y = 200;
@@ -235,8 +239,12 @@ var Dialog = (function (_super) {
         this.nextButton = game.input.keyboard.addKey(this.key);
         this.nextButton.onDown.add(this.advanceDialog, this);
     }
+    Dialog.prototype.interact = function () {
+        // TODO
+    };
+
     Dialog.prototype.getEffectiveSpeed = function () {
-        var effectiveSpeed = this.speed;
+        var effectiveSpeed = this.baseSpeed;
 
         if (game.input.keyboard.isDown(this.key)) {
             effectiveSpeed /= 2;
