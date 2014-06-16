@@ -132,10 +132,6 @@ class MainState extends Phaser.State {
     this.game.add.existing(this.monster = new Monster());
   }
 
-  public getGroup<T>(e:T):T {
-
-  }
-
   public update():void {
     var kb = game.input.keyboard;
 
@@ -147,7 +143,10 @@ class MainState extends Phaser.State {
       this.map.reload();
     }
 
-    var closest:Monster = this.groups.get(Monster).sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first();
+    var closest:Monster = this.groups.get(Monster.prototype).sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first();
+    if (C.entityDist(this.player, closest) < 100) {
+      console.log("FIGHT");
+    }
   }
 }
 

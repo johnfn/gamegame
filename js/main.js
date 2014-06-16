@@ -128,9 +128,6 @@ var MainState = (function (_super) {
         this.game.add.existing(this.monster = new Monster());
     };
 
-    MainState.prototype.getGroup = function (e) {
-    };
-
     MainState.prototype.update = function () {
         var _this = this;
         var kb = game.input.keyboard;
@@ -143,9 +140,12 @@ var MainState = (function (_super) {
             this.map.reload();
         }
 
-        var closest = this.groups.get(Monster).sortByKey(function (e) {
+        var closest = this.groups.get(Monster.prototype).sortByKey(function (e) {
             return C.entityDist(_this.player, e);
         }).first();
+        if (C.entityDist(this.player, closest) < 100) {
+            console.log("FIGHT");
+        }
     };
     return MainState;
 })(Phaser.State);
