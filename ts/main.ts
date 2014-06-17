@@ -58,47 +58,9 @@ class List<T> {
   }
 }
 
-/*
-class SuperArrayList extends Phaser.ArrayList {
-  sortByKey(key:(elem: any) => number) {
-    this.list.sort(function(a, b) {
-      return key(a) - key(b);
-    })
-
-    return this;
-  }
-}
-*/
-
-// Groups is essentially a typesystem hack to make a dictionary that maps keys of any type to values
-// which are lists of that same type. afaik there's no way for a type system to verify this, unless it's haskell.
-// Using it is typesafe (though obviously the implementation isn't).
-//
-// usage:
-// var g:Groups = new Groups();
-// g.put(p = new Player());
-// g.put(a = new Entity());
-// console.log(g.get(Entity).first == a); // true
-
-class Groups {
-  dict: {[key: string]: any} = {};
-
-  public put<T>(value:T) {
-    var typename:string = (<any> value).constructor.name;
-    if (!(typename in this.dict)) this.dict[typename] = new List<T>();
-
-    this.dict[typename].push(value);
-  }
-
-  public get<T>(object:T):List<T> {
-    var typename:string = (<any> object).prototype.constructor.name;
-
-    return <List<T>> this.dict[typename];
-  }
-}
 
 class MainState extends Phaser.State {
-  groups:Groups = new Groups();
+  groups:{[key: string]: List<any>} = {};
 
   player:Player;
   map:GameMap;
@@ -122,7 +84,7 @@ class MainState extends Phaser.State {
 
     this.map = new GameMap("tilesetkey", "map");
 
-    //this.game.add.existing(new NPC());
+    this.game.add.existing(new NPC());
 
     this.player = new Player(this.game, this.map);
     this.game.add.existing(this.player);
@@ -143,7 +105,7 @@ class MainState extends Phaser.State {
       this.map.reload();
     }
 
-    var closest:Monster = this.groups.get(Monster.prototype).sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first();
+    var closest:Monster = (<List<Monster>> this.groups["Monster"]).sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first();
     if (C.entityDist(this.player, closest) < 100) {
       console.log("FIGHT");
     }
@@ -173,7 +135,7 @@ class HUD extends Phaser.Group {
   }
 }
 
-interface Interactable {
+interface Interactable extends Pos {
   interact: () => void;
   description: string;
   distanceToInteract: number;
@@ -209,11 +171,11 @@ class Entity extends Phaser.Sprite {
       var groupName:string = groups[i];
 
       if (!currentState.groups[groupName]) {
-        var newGroup:SuperArrayList = new SuperArrayList();
+        var newGroup:List<any> = new List<any>();
         currentState.groups[groupName] = newGroup;
       }
 
-      currentState.groups[groupName].add(this);
+      currentState.groups[groupName].push(this);
     }
   }
 
@@ -239,7 +201,7 @@ class BaseMonster extends Entity {
   constructor(asset:string) {
     super(asset);
 
-    this.p = <Player> C.state().groups["Player"].first;
+    this.p = (<List<Player>> C.state().groups["Player"]).first();
   }
 }
 
@@ -275,8 +237,8 @@ class Indicator extends Entity {
   }
 
   update() {
-    var group:List<Interactable> = C.state().groups.get(Interactable);
-    var closest:Entity = group.sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first;
+    var group:List<Interactable> = <any> C.state().groups["Interactable"];
+    var closest:Interactable = group.sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first();
     var showIndicator = (C.entityDist(closest, this.player) < 80);
 
     if (showIndicator) {
@@ -284,7 +246,7 @@ class Indicator extends Entity {
       this.y = closest.y - 10;
     }
 
-    this.target = <Interactable> (showIndicator ? <any> closest: null);
+    this.target = showIndicator ? closest: null;
     this.visible = showIndicator;
   }
 }
@@ -305,7 +267,7 @@ class NPC extends Entity implements Interactable {
   }
 
   groups():string[] {
-    return super.groups().concat("interactable");
+    return super.groups().concat("Interactable");
   }
 }
 

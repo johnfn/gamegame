@@ -58,50 +58,11 @@ var List = (function () {
     return List;
 })();
 
-/*
-class SuperArrayList extends Phaser.ArrayList {
-sortByKey(key:(elem: any) => number) {
-this.list.sort(function(a, b) {
-return key(a) - key(b);
-})
-return this;
-}
-}
-*/
-// Groups is essentially a typesystem hack to make a dictionary that maps keys of any type to values
-// which are lists of that same type. afaik there's no way for a type system to verify this, unless it's haskell.
-// Using it is typesafe (though obviously the implementation isn't).
-//
-// usage:
-// var g:Groups = new Groups();
-// g.put(p = new Player());
-// g.put(a = new Entity());
-// console.log(g.get(Entity).first == a); // true
-var Groups = (function () {
-    function Groups() {
-        this.dict = {};
-    }
-    Groups.prototype.put = function (value) {
-        var typename = value.constructor.name;
-        if (!(typename in this.dict))
-            this.dict[typename] = new List();
-
-        this.dict[typename].push(value);
-    };
-
-    Groups.prototype.get = function (object) {
-        var typename = object.prototype.constructor.name;
-
-        return this.dict[typename];
-    };
-    return Groups;
-})();
-
 var MainState = (function (_super) {
     __extends(MainState, _super);
     function MainState() {
         _super.apply(this, arguments);
-        this.groups = new Groups();
+        this.groups = {};
     }
     MainState.prototype.preload = function () {
         this.load.spritesheet("player", "assets/player.png", 25, 25, 1);
@@ -119,7 +80,8 @@ var MainState = (function (_super) {
 
         this.map = new GameMap("tilesetkey", "map");
 
-        //this.game.add.existing(new NPC());
+        this.game.add.existing(new NPC());
+
         this.player = new Player(this.game, this.map);
         this.game.add.existing(this.player);
 
@@ -140,7 +102,7 @@ var MainState = (function (_super) {
             this.map.reload();
         }
 
-        var closest = this.groups.get(Monster.prototype).sortByKey(function (e) {
+        var closest = this.groups["Monster"].sortByKey(function (e) {
             return C.entityDist(_this.player, e);
         }).first();
         if (C.entityDist(this.player, closest) < 100) {
@@ -194,11 +156,11 @@ var Entity = (function (_super) {
             var groupName = groups[i];
 
             if (!currentState.groups[groupName]) {
-                var newGroup = new SuperArrayList();
+                var newGroup = new List();
                 currentState.groups[groupName] = newGroup;
             }
 
-            currentState.groups[groupName].add(this);
+            currentState.groups[groupName].push(this);
         }
     };
 
@@ -224,7 +186,7 @@ var BaseMonster = (function (_super) {
     function BaseMonster(asset) {
         _super.call(this, asset);
 
-        this.p = C.state().groups["Player"].first;
+        this.p = C.state().groups["Player"].first();
     }
     return BaseMonster;
 })(Entity);
@@ -259,10 +221,10 @@ var Indicator = (function (_super) {
 
     Indicator.prototype.update = function () {
         var _this = this;
-        var group = C.state().groups.get(Interactable);
+        var group = C.state().groups["Interactable"];
         var closest = group.sortByKey(function (e) {
             return C.entityDist(_this.player, e);
-        }).first;
+        }).first();
         var showIndicator = (C.entityDist(closest, this.player) < 80);
 
         if (showIndicator) {
@@ -270,7 +232,7 @@ var Indicator = (function (_super) {
             this.y = closest.y - 10;
         }
 
-        this.target = (showIndicator ? closest : null);
+        this.target = showIndicator ? closest : null;
         this.visible = showIndicator;
     };
     return Indicator;
@@ -291,7 +253,7 @@ var NPC = (function (_super) {
     };
 
     NPC.prototype.groups = function () {
-        return _super.prototype.groups.call(this).concat("interactable");
+        return _super.prototype.groups.call(this).concat("Interactable");
     };
     return NPC;
 })(Entity);
