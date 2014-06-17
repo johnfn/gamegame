@@ -58,15 +58,24 @@ class List<T> {
   }
 }
 
+enum Mode {
+  Normal,
+  Battle
+}
 
 class MainState extends Phaser.State {
   private _groups:{[key: string]: List<any>} = {};
 
+  gameMode:Mode = Mode.Normal;
   player:Player;
   map:GameMap;
   indicator:Indicator;
   hud:HUD;
   monster:Monster;
+
+  // for battles
+  battlePlayer:PlayerInBattle;
+  entityWithPriority:Entity;
 
   public groups(key: string): List<any> {
     if (!(key in this._groups)) {
@@ -95,6 +104,8 @@ class MainState extends Phaser.State {
     //this.game.add.existing(new NPC());
 
     this.player = new Player(this.game, this.map);
+    this.battlePlayer = new PlayerInBattle();
+
     this.game.add.existing(this.player);
 
     this.game.add.existing(this.indicator = new Indicator(this.player));
@@ -105,7 +116,29 @@ class MainState extends Phaser.State {
     this.monster.y = 300;
   }
 
+  public switchMode(to:Mode):void {
+    if (this.gameMode == to) return;
+
+    if (to == Mode.Battle) {
+      this.world.remove(this.player, false);
+      this.world.add(this.battlePlayer);
+
+      this.battlePlayer.x = this.player.x;
+      this.battlePlayer.y = this.player.y;
+
+      this.entityWithPriority = this.battlePlayer;
+    }
+  }
+
   public update():void {
+    switch (this.gameMode) {
+      case Mode.Normal: this.normalUpdate(); return;
+      case Mode.Battle: this.battleUpdate(); return;
+      default: debugger;
+    }
+  }
+
+  public normalUpdate() {
     var kb = game.input.keyboard;
 
     for (var name in this.map.collideableLayers) {
@@ -118,8 +151,12 @@ class MainState extends Phaser.State {
 
     var closest:Monster = (<List<Monster>> this.groups("Monster")).sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first();
     if (C.entityDist(this.player, closest) < 100) {
-      console.log("FIGHT");
+      this.switchMode(Mode.Battle);
     }
+  }
+
+  public battleUpdate() {
+    console.log("this is a battle. beware");
   }
 }
 
@@ -161,10 +198,12 @@ interface KeyListener {
 class Entity extends Phaser.Sprite {
   body:Phaser.Physics.Arcade.Body;
   listeners:KeyListener[] = [];
+  keyboard:Phaser.Keyboard;
 
   constructor(spritesheet:string) {
     super(game, 0, 0, spritesheet, 0);
 
+    this.keyboard = this.game.input.keyboard;
     game.physics.enable(this, Phaser.Physics.ARCADE);
 
     this.addToGroups();
@@ -345,6 +384,16 @@ class Dialog extends Phaser.Group implements Interactable {
         this.nextButton.onDown.remove(this.advanceDialog, this);
       }
     }
+  }
+}
+
+class PlayerInBattle extends Entity {
+  constructor() {
+    super("player");
+  }
+
+  update() {
+    console.log("im in a battle!");
   }
 }
 

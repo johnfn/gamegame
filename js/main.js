@@ -58,11 +58,18 @@ var List = (function () {
     return List;
 })();
 
+var Mode;
+(function (Mode) {
+    Mode[Mode["Normal"] = 0] = "Normal";
+    Mode[Mode["Battle"] = 1] = "Battle";
+})(Mode || (Mode = {}));
+
 var MainState = (function (_super) {
     __extends(MainState, _super);
     function MainState() {
         _super.apply(this, arguments);
         this._groups = {};
+        this.gameMode = 0 /* Normal */;
     }
     MainState.prototype.groups = function (key) {
         if (!(key in this._groups)) {
@@ -90,6 +97,8 @@ var MainState = (function (_super) {
 
         //this.game.add.existing(new NPC());
         this.player = new Player(this.game, this.map);
+        this.battlePlayer = new PlayerInBattle();
+
         this.game.add.existing(this.player);
 
         this.game.add.existing(this.indicator = new Indicator(this.player));
@@ -100,7 +109,35 @@ var MainState = (function (_super) {
         this.monster.y = 300;
     };
 
+    MainState.prototype.switchMode = function (to) {
+        if (this.gameMode == to)
+            return;
+
+        if (to == 1 /* Battle */) {
+            this.world.remove(this.player, false);
+            this.world.add(this.battlePlayer);
+
+            this.battlePlayer.x = this.player.x;
+            this.battlePlayer.y = this.player.y;
+
+            this.entityWithPriority = this.battlePlayer;
+        }
+    };
+
     MainState.prototype.update = function () {
+        switch (this.gameMode) {
+            case 0 /* Normal */:
+                this.normalUpdate();
+                return;
+            case 1 /* Battle */:
+                this.battleUpdate();
+                return;
+            default:
+                debugger;
+        }
+    };
+
+    MainState.prototype.normalUpdate = function () {
         var _this = this;
         var kb = game.input.keyboard;
 
@@ -116,8 +153,12 @@ var MainState = (function (_super) {
             return C.entityDist(_this.player, e);
         }).first();
         if (C.entityDist(this.player, closest) < 100) {
-            console.log("FIGHT");
+            this.switchMode(1 /* Battle */);
         }
+    };
+
+    MainState.prototype.battleUpdate = function () {
+        console.log("this is a battle. beware");
     };
     return MainState;
 })(Phaser.State);
@@ -150,6 +191,7 @@ var Entity = (function (_super) {
         _super.call(this, game, 0, 0, spritesheet, 0);
         this.listeners = [];
 
+        this.keyboard = this.game.input.keyboard;
         game.physics.enable(this, Phaser.Physics.ARCADE);
 
         this.addToGroups();
@@ -327,6 +369,17 @@ var Dialog = (function (_super) {
     };
     return Dialog;
 })(Phaser.Group);
+
+var PlayerInBattle = (function (_super) {
+    __extends(PlayerInBattle, _super);
+    function PlayerInBattle() {
+        _super.call(this, "player");
+    }
+    PlayerInBattle.prototype.update = function () {
+        console.log("im in a battle!");
+    };
+    return PlayerInBattle;
+})(Entity);
 
 var Player = (function (_super) {
     __extends(Player, _super);
