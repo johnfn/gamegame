@@ -62,8 +62,16 @@ var MainState = (function (_super) {
     __extends(MainState, _super);
     function MainState() {
         _super.apply(this, arguments);
-        this.groups = {};
+        this._groups = {};
     }
+    MainState.prototype.groups = function (key) {
+        if (!(key in this._groups)) {
+            this._groups[key] = new List();
+        }
+
+        return this._groups[key];
+    };
+
     MainState.prototype.preload = function () {
         this.load.spritesheet("player", "assets/player.png", 25, 25, 1);
         this.load.spritesheet("tilesetkey", "assets/tileset.png", 25, 25, 1);
@@ -80,14 +88,16 @@ var MainState = (function (_super) {
 
         this.map = new GameMap("tilesetkey", "map");
 
-        this.game.add.existing(new NPC());
-
+        //this.game.add.existing(new NPC());
         this.player = new Player(this.game, this.map);
         this.game.add.existing(this.player);
 
         this.game.add.existing(this.indicator = new Indicator(this.player));
         this.game.add.existing(this.hud = new HUD(this.indicator));
         this.game.add.existing(this.monster = new Monster());
+
+        this.monster.x = 300;
+        this.monster.y = 300;
     };
 
     MainState.prototype.update = function () {
@@ -102,7 +112,7 @@ var MainState = (function (_super) {
             this.map.reload();
         }
 
-        var closest = this.groups["Monster"].sortByKey(function (e) {
+        var closest = this.groups("Monster").sortByKey(function (e) {
             return C.entityDist(_this.player, e);
         }).first();
         if (C.entityDist(this.player, closest) < 100) {
@@ -153,14 +163,7 @@ var Entity = (function (_super) {
         var currentState = game.state.getCurrentState();
 
         for (var i = 0; i < groups.length; i++) {
-            var groupName = groups[i];
-
-            if (!currentState.groups[groupName]) {
-                var newGroup = new List();
-                currentState.groups[groupName] = newGroup;
-            }
-
-            currentState.groups[groupName].push(this);
+            currentState.groups(groups[i]).push(this);
         }
     };
 
@@ -186,7 +189,7 @@ var BaseMonster = (function (_super) {
     function BaseMonster(asset) {
         _super.call(this, asset);
 
-        this.p = C.state().groups["Player"].first();
+        this.p = C.state().groups("Player").first();
     }
     return BaseMonster;
 })(Entity);
@@ -221,10 +224,13 @@ var Indicator = (function (_super) {
 
     Indicator.prototype.update = function () {
         var _this = this;
-        var group = C.state().groups["Interactable"];
+        var group = C.state().groups("Interactable");
         var closest = group.sortByKey(function (e) {
             return C.entityDist(_this.player, e);
         }).first();
+        if (!closest)
+            return;
+
         var showIndicator = (C.entityDist(closest, this.player) < 80);
 
         if (showIndicator) {

@@ -60,13 +60,21 @@ class List<T> {
 
 
 class MainState extends Phaser.State {
-  groups:{[key: string]: List<any>} = {};
+  private _groups:{[key: string]: List<any>} = {};
 
   player:Player;
   map:GameMap;
   indicator:Indicator;
   hud:HUD;
   monster:Monster;
+
+  public groups(key: string): List<any> {
+    if (!(key in this._groups)) {
+      this._groups[key] = new List();
+    }
+
+    return this._groups[key];
+  }
 
   public preload():void {
     this.load.spritesheet("player", "assets/player.png", 25, 25, 1);
@@ -84,7 +92,7 @@ class MainState extends Phaser.State {
 
     this.map = new GameMap("tilesetkey", "map");
 
-    this.game.add.existing(new NPC());
+    //this.game.add.existing(new NPC());
 
     this.player = new Player(this.game, this.map);
     this.game.add.existing(this.player);
@@ -92,6 +100,9 @@ class MainState extends Phaser.State {
     this.game.add.existing(this.indicator = new Indicator(this.player));
     this.game.add.existing(this.hud = new HUD(this.indicator));
     this.game.add.existing(this.monster = new Monster());
+
+    this.monster.x = 300;
+    this.monster.y = 300;
   }
 
   public update():void {
@@ -105,7 +116,7 @@ class MainState extends Phaser.State {
       this.map.reload();
     }
 
-    var closest:Monster = (<List<Monster>> this.groups["Monster"]).sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first();
+    var closest:Monster = (<List<Monster>> this.groups("Monster")).sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first();
     if (C.entityDist(this.player, closest) < 100) {
       console.log("FIGHT");
     }
@@ -168,14 +179,7 @@ class Entity extends Phaser.Sprite {
     var currentState:MainState = (<MainState> game.state.getCurrentState());
 
     for (var i = 0; i < groups.length; i++) {
-      var groupName:string = groups[i];
-
-      if (!currentState.groups[groupName]) {
-        var newGroup:List<any> = new List<any>();
-        currentState.groups[groupName] = newGroup;
-      }
-
-      currentState.groups[groupName].push(this);
+      currentState.groups(groups[i]).push(this);
     }
   }
 
@@ -201,7 +205,7 @@ class BaseMonster extends Entity {
   constructor(asset:string) {
     super(asset);
 
-    this.p = (<List<Player>> C.state().groups["Player"]).first();
+    this.p = (<List<Player>> C.state().groups("Player")).first();
   }
 }
 
@@ -237,8 +241,10 @@ class Indicator extends Entity {
   }
 
   update() {
-    var group:List<Interactable> = <any> C.state().groups["Interactable"];
+    var group:List<Interactable> = <any> C.state().groups("Interactable");
     var closest:Interactable = group.sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first();
+    if (!closest) return;
+
     var showIndicator = (C.entityDist(closest, this.player) < 80);
 
     if (showIndicator) {
