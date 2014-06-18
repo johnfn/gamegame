@@ -122,6 +122,8 @@ var MainState = (function (_super) {
 
             this.entityWithPriority = this.battlePlayer;
         }
+
+        this.gameMode = to;
     };
 
     MainState.prototype.update = function () {
@@ -370,16 +372,61 @@ var Dialog = (function (_super) {
     return Dialog;
 })(Phaser.Group);
 
+var HealthBar = (function (_super) {
+    __extends(HealthBar, _super);
+    function HealthBar(health, maxHealth) {
+        _super.call(this, game, 0, 0);
+        this.health = health;
+        this.maxHealth = maxHealth;
+        this.maxWidth = 25;
+
+        this.draw();
+    }
+    HealthBar.prototype.draw = function () {
+        var effectiveWidth = (this.health / this.maxHealth) * this.maxWidth;
+
+        this.clear();
+
+        this.beginFill(0x000000, 1);
+        this.drawRect(0, 0, this.maxWidth, 5);
+        this.endFill();
+
+        this.beginFill(0xff0000, 1);
+        this.drawRect(0, 0, effectiveWidth, 5);
+        this.endFill();
+    };
+
+    HealthBar.prototype.setHealth = function (health) {
+        this.health = health;
+
+        this.draw();
+    };
+    return HealthBar;
+})(Phaser.Graphics);
+
 var PlayerInBattle = (function (_super) {
     __extends(PlayerInBattle, _super);
     function PlayerInBattle() {
-        _super.call(this, "player");
+        _super.call(this, game);
+
+        this.player = new Entity("player");
+        this.player.x = 0;
+        this.player.y = 0;
+        this.add(this.player);
+
+        this.health = 20;
+        this.maxHealth = 20;
+        this.healthbar = new HealthBar(this.health, this.maxHealth);
+
+        this.add(this.healthbar);
     }
     PlayerInBattle.prototype.update = function () {
-        console.log("im in a battle!");
+        if (C.state().entityWithPriority == this) {
+            console.log("im in a battle!");
+        }
     };
     return PlayerInBattle;
-})(Entity);
+})(Phaser.Group);
 
 var Player = (function (_super) {
     __extends(Player, _super);

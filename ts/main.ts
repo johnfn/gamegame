@@ -75,7 +75,7 @@ class MainState extends Phaser.State {
 
   // for battles
   battlePlayer:PlayerInBattle;
-  entityWithPriority:Entity;
+  entityWithPriority:any;
 
   public groups(key: string): List<any> {
     if (!(key in this._groups)) {
@@ -128,6 +128,8 @@ class MainState extends Phaser.State {
 
       this.entityWithPriority = this.battlePlayer;
     }
+
+    this.gameMode = to;
   }
 
   public update():void {
@@ -387,13 +389,61 @@ class Dialog extends Phaser.Group implements Interactable {
   }
 }
 
-class PlayerInBattle extends Entity {
+class HealthBar extends Phaser.Graphics {
+  maxWidth:number = 25;
+
+  constructor(private health:number, private maxHealth:number) {
+    super(game, 0, 0);
+
+    this.draw();
+  }
+
+  private draw() {
+    var effectiveWidth = (this.health / this.maxHealth) * this.maxWidth;
+
+    this.clear();
+
+    this.beginFill(0x000000, 1);
+    this.drawRect(0, 0, this.maxWidth, 5);
+    this.endFill();
+
+    this.beginFill(0xff0000, 1);
+    this.drawRect(0, 0, effectiveWidth, 5);
+    this.endFill();
+  }
+
+  setHealth(health:number) {
+    this.health = health;
+
+    this.draw();
+  }
+}
+
+class PlayerInBattle extends Phaser.Group {
+  healthbar:HealthBar;
+  health:number;
+  maxHealth:number;
+  player:Entity;
+
   constructor() {
-    super("player");
+    super(game);
+
+    this.player = new Entity("player");
+    this.player.x = 0;
+    this.player.y = 0;
+    this.add(this.player);
+
+    this.health = 20;
+    this.maxHealth = 20;
+    this.healthbar = new HealthBar(this.health, this.maxHealth);
+
+    this.add(this.healthbar);
   }
 
   update() {
-    console.log("im in a battle!");
+    if (C.state().entityWithPriority == this) {
+      console.log("im in a battle!");
+    }
   }
 }
 
