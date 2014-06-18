@@ -99,6 +99,8 @@ var MainState = (function (_super) {
         this.player = new Player(this.game, this.map);
         this.battlePlayer = new PlayerInBattle();
 
+        this.battleUI = new BattleUI();
+
         this.game.add.existing(this.player);
 
         this.game.add.existing(this.indicator = new Indicator(this.player));
@@ -403,6 +405,46 @@ var HealthBar = (function (_super) {
     };
     return HealthBar;
 })(Phaser.Graphics);
+
+var MenuItem = (function (_super) {
+    __extends(MenuItem, _super);
+    function MenuItem(content) {
+        _super.call(this, game);
+        this.content = content;
+        this.selected = false;
+
+        this.text = new Phaser.Text(game, 0, 0, this.content, { font: "14 pt Arial" });
+    }
+    return MenuItem;
+})(Phaser.Group);
+
+var MenuUI = (function (_super) {
+    __extends(MenuUI, _super);
+    function MenuUI(items) {
+        _super.call(this, game);
+        this.items = items;
+
+        this.menuItems = [];
+
+        for (var i = 0; i < items.length; i++) {
+            var item = new MenuItem(items[i]);
+
+            item.x = 0;
+            item.y = item.height * i;
+
+            this.menuItems[i] = item;
+        }
+    }
+    return MenuUI;
+})(Phaser.Group);
+
+var BattleUI = (function (_super) {
+    __extends(BattleUI, _super);
+    function BattleUI() {
+        _super.call(this, game);
+    }
+    return BattleUI;
+})(Phaser.Group);
 
 var PlayerInBattle = (function (_super) {
     __extends(PlayerInBattle, _super);

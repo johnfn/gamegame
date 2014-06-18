@@ -76,6 +76,7 @@ class MainState extends Phaser.State {
   // for battles
   battlePlayer:PlayerInBattle;
   entityWithPriority:any;
+  battleUI:BattleUI;
 
   public groups(key: string): List<any> {
     if (!(key in this._groups)) {
@@ -105,6 +106,8 @@ class MainState extends Phaser.State {
 
     this.player = new Player(this.game, this.map);
     this.battlePlayer = new PlayerInBattle();
+
+    this.battleUI = new BattleUI();
 
     this.game.add.existing(this.player);
 
@@ -416,6 +419,45 @@ class HealthBar extends Phaser.Graphics {
     this.health = health;
 
     this.draw();
+  }
+}
+
+class MenuItem extends Phaser.Group {
+  selected:boolean = false;
+  text:Phaser.Text;
+
+  constructor(private content:string) {
+    super(game);
+
+    this.text = new Phaser.Text(game, 0, 0, this.content, {font: "14 pt Arial"});
+  }
+}
+
+class MenuUI extends Phaser.Group {
+  menuItems:MenuItem[];
+
+  constructor(private items:string[]) {
+    super(game);
+
+    this.menuItems = [];
+
+    for (var i = 0; i < items.length; i++) {
+      var item = new MenuItem(items[i]);
+
+      item.x = 0;
+      item.y = item.height * i;
+
+      this.menuItems[i] = item;
+    }
+  }
+}
+
+class BattleUI extends Phaser.Group {
+  p:PlayerInBattle;
+  monster:Monster;
+
+  constructor() {
+    super(game);
   }
 }
 
