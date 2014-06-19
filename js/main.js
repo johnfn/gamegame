@@ -423,6 +423,7 @@ var MenuUI = (function (_super) {
     function MenuUI(items) {
         _super.call(this, game);
         this.items = items;
+        this.selectedItemIndex = 0;
 
         this.menuItems = [];
 
@@ -435,6 +436,19 @@ var MenuUI = (function (_super) {
             this.menuItems[i] = item;
         }
     }
+    MenuUI.prototype.update = function () {
+        var keyboard = this.game.input.keyboard;
+
+        if (keyboard.isDown(Phaser.Keyboard.UP)) {
+            this.selectedItemIndex--;
+        }
+
+        if (keyboard.isDown(Phaser.Keyboard.DOWN)) {
+            this.selectedItemIndex++;
+        }
+
+        this.selectedItemIndex = Phaser.Math.clamp(this.selectedItemIndex, 0, this.menuItems.length - 1);
+    };
     return MenuUI;
 })(Phaser.Group);
 

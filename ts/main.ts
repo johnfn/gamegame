@@ -435,6 +435,7 @@ class MenuItem extends Phaser.Group {
 
 class MenuUI extends Phaser.Group {
   menuItems:MenuItem[];
+  selectedItemIndex:number = 0;
 
   constructor(private items:string[]) {
     super(game);
@@ -449,6 +450,20 @@ class MenuUI extends Phaser.Group {
 
       this.menuItems[i] = item;
     }
+  }
+
+  update() {
+    var keyboard = this.game.input.keyboard;
+
+    if (keyboard.isDown(Phaser.Keyboard.UP)) {
+      this.selectedItemIndex--;
+    }
+
+    if (keyboard.isDown(Phaser.Keyboard.DOWN)) {
+      this.selectedItemIndex++;
+    }
+
+    this.selectedItemIndex = Phaser.Math.clamp(this.selectedItemIndex, 0, this.menuItems.length - 1);
   }
 }
 
