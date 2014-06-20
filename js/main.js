@@ -118,6 +118,7 @@ var MainState = (function (_super) {
         if (to == 1 /* Battle */) {
             this.world.remove(this.player, false);
             this.world.add(this.battlePlayer);
+            this.world.add(this.battleUI);
 
             this.battlePlayer.x = this.player.x;
             this.battlePlayer.y = this.player.y;
@@ -413,7 +414,7 @@ var MenuItem = (function (_super) {
         this.content = content;
         this.selected = false;
 
-        this.text = new Phaser.Text(game, 0, 0, this.content, { font: "14 pt Arial" });
+        this.add(this.text = new Phaser.Text(game, 0, 0, this.content, { font: "14 pt Arial" }));
     }
     return MenuItem;
 })(Phaser.Group);
@@ -430,10 +431,11 @@ var MenuUI = (function (_super) {
         for (var i = 0; i < items.length; i++) {
             var item = new MenuItem(items[i]);
 
-            item.x = 0;
-            item.y = item.height * i;
+            item.x = 50;
+            item.y = 20 * i + 50;
 
             this.menuItems[i] = item;
+            this.add(this.menuItems[i]);
         }
     }
     MenuUI.prototype.update = function () {
@@ -456,6 +458,8 @@ var BattleUI = (function (_super) {
     __extends(BattleUI, _super);
     function BattleUI() {
         _super.call(this, game);
+
+        this.add(this.menu = new MenuUI(["Attack", "Items", "Run"]));
     }
     return BattleUI;
 })(Phaser.Group);
