@@ -424,13 +424,27 @@ class HealthBar extends Phaser.Graphics {
 }
 
 class MenuItem extends Phaser.Group {
-  selected:boolean = false;
-  text:Phaser.Text;
+  private _selected:boolean = false;
+  private text:Phaser.Text;
 
   constructor(private content:string) {
     super(game);
 
     this.add(this.text = new Phaser.Text(game, 0, 0, this.content, {font: "14 pt Arial"}));
+  }
+
+  get selected():boolean {
+    return this._selected;
+  }
+
+  set selected(value:boolean) {
+    this._selected = value;
+
+    if (this._selected) {
+      this.text.text = "> " + this.content;
+    } else {
+      this.text.text = this.content;
+    }
   }
 }
 
@@ -452,20 +466,17 @@ class MenuUI extends Phaser.Group {
       this.menuItems[i] = item;
       this.add(this.menuItems[i]);
     }
+
+    this.menuItems[0].selected = true;
+
+    game.input.keyboard.addKey(Phaser.Keyboard.UP).onUp.add(function() { this.changeSelectedItem(-1); }, this);
+    game.input.keyboard.addKey(Phaser.Keyboard.DOWN).onUp.add(function() { this.changeSelectedItem(+1); }, this);
   }
 
-  update() {
-    var keyboard = this.game.input.keyboard;
-
-    if (keyboard.isDown(Phaser.Keyboard.UP)) {
-      this.selectedItemIndex--;
-    }
-
-    if (keyboard.isDown(Phaser.Keyboard.DOWN)) {
-      this.selectedItemIndex++;
-    }
-
-    this.selectedItemIndex = Phaser.Math.clamp(this.selectedItemIndex, 0, this.menuItems.length - 1);
+  private changeSelectedItem(dx) {
+    this.menuItems[this.selectedItemIndex].selected = false;
+    this.selectedItemIndex = Phaser.Math.clamp(this.selectedItemIndex + dx, 0, this.menuItems.length - 1);
+    this.menuItems[this.selectedItemIndex].selected = true;
   }
 }
 

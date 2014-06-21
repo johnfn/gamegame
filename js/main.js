@@ -412,10 +412,27 @@ var MenuItem = (function (_super) {
     function MenuItem(content) {
         _super.call(this, game);
         this.content = content;
-        this.selected = false;
+        this._selected = false;
 
         this.add(this.text = new Phaser.Text(game, 0, 0, this.content, { font: "14 pt Arial" }));
     }
+    Object.defineProperty(MenuItem.prototype, "selected", {
+        get: function () {
+            return this._selected;
+        },
+        set: function (value) {
+            this._selected = value;
+
+            if (this._selected) {
+                this.text.text = "> " + this.content;
+            } else {
+                this.text.text = this.content;
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+
     return MenuItem;
 })(Phaser.Group);
 
@@ -437,19 +454,20 @@ var MenuUI = (function (_super) {
             this.menuItems[i] = item;
             this.add(this.menuItems[i]);
         }
+
+        this.menuItems[0].selected = true;
+
+        game.input.keyboard.addKey(Phaser.Keyboard.UP).onUp.add(function () {
+            this.changeSelectedItem(-1);
+        }, this);
+        game.input.keyboard.addKey(Phaser.Keyboard.DOWN).onUp.add(function () {
+            this.changeSelectedItem(+1);
+        }, this);
     }
-    MenuUI.prototype.update = function () {
-        var keyboard = this.game.input.keyboard;
-
-        if (keyboard.isDown(Phaser.Keyboard.UP)) {
-            this.selectedItemIndex--;
-        }
-
-        if (keyboard.isDown(Phaser.Keyboard.DOWN)) {
-            this.selectedItemIndex++;
-        }
-
-        this.selectedItemIndex = Phaser.Math.clamp(this.selectedItemIndex, 0, this.menuItems.length - 1);
+    MenuUI.prototype.changeSelectedItem = function (dx) {
+        this.menuItems[this.selectedItemIndex].selected = false;
+        this.selectedItemIndex = Phaser.Math.clamp(this.selectedItemIndex + dx, 0, this.menuItems.length - 1);
+        this.menuItems[this.selectedItemIndex].selected = true;
     };
     return MenuUI;
 })(Phaser.Group);
