@@ -61,7 +61,6 @@ var List = (function () {
 var Mode;
 (function (Mode) {
     Mode[Mode["Normal"] = 0] = "Normal";
-    Mode[Mode["Battle"] = 1] = "Battle";
 })(Mode || (Mode = {}));
 
 var MainState = (function (_super) {
@@ -99,8 +98,6 @@ var MainState = (function (_super) {
         this.player = new Player(this.game, this.map);
         this.battlePlayer = new PlayerInBattle();
 
-        this.battleUI = new BattleUI();
-
         this.game.add.existing(this.player);
 
         this.game.add.existing(this.indicator = new Indicator(this.player));
@@ -115,17 +112,6 @@ var MainState = (function (_super) {
         if (this.gameMode == to)
             return;
 
-        if (to == 1 /* Battle */) {
-            this.world.remove(this.player, false);
-            this.world.add(this.battlePlayer);
-            this.world.add(this.battleUI);
-
-            this.battlePlayer.x = this.player.x;
-            this.battlePlayer.y = this.player.y;
-
-            this.entityWithPriority = this.battlePlayer;
-        }
-
         this.gameMode = to;
     };
 
@@ -134,16 +120,12 @@ var MainState = (function (_super) {
             case 0 /* Normal */:
                 this.normalUpdate();
                 return;
-            case 1 /* Battle */:
-                this.battleUpdate();
-                return;
             default:
                 debugger;
         }
     };
 
     MainState.prototype.normalUpdate = function () {
-        var _this = this;
         var kb = game.input.keyboard;
 
         for (var name in this.map.collideableLayers) {
@@ -153,17 +135,6 @@ var MainState = (function (_super) {
         if (kb.isDown(Phaser.Keyboard.Q)) {
             this.map.reload();
         }
-
-        var closest = this.groups("Monster").sortByKey(function (e) {
-            return C.entityDist(_this.player, e);
-        }).first();
-        if (C.entityDist(this.player, closest) < 100) {
-            this.switchMode(1 /* Battle */);
-        }
-    };
-
-    MainState.prototype.battleUpdate = function () {
-        console.log("this is a battle. beware");
     };
     return MainState;
 })(Phaser.State);
@@ -470,16 +441,6 @@ var MenuUI = (function (_super) {
         this.menuItems[this.selectedItemIndex].selected = true;
     };
     return MenuUI;
-})(Phaser.Group);
-
-var BattleUI = (function (_super) {
-    __extends(BattleUI, _super);
-    function BattleUI() {
-        _super.call(this, game);
-
-        this.add(this.menu = new MenuUI(["Attack", "Items", "Run"]));
-    }
-    return BattleUI;
 })(Phaser.Group);
 
 var PlayerInBattle = (function (_super) {

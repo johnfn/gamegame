@@ -59,8 +59,7 @@ class List<T> {
 }
 
 enum Mode {
-  Normal,
-  Battle
+  Normal
 }
 
 class MainState extends Phaser.State {
@@ -76,7 +75,6 @@ class MainState extends Phaser.State {
   // for battles
   battlePlayer:PlayerInBattle;
   entityWithPriority:any;
-  battleUI:BattleUI;
 
   public groups(key: string): List<any> {
     if (!(key in this._groups)) {
@@ -107,8 +105,6 @@ class MainState extends Phaser.State {
     this.player = new Player(this.game, this.map);
     this.battlePlayer = new PlayerInBattle();
 
-    this.battleUI = new BattleUI();
-
     this.game.add.existing(this.player);
 
     this.game.add.existing(this.indicator = new Indicator(this.player));
@@ -122,24 +118,12 @@ class MainState extends Phaser.State {
   public switchMode(to:Mode):void {
     if (this.gameMode == to) return;
 
-    if (to == Mode.Battle) {
-      this.world.remove(this.player, false);
-      this.world.add(this.battlePlayer);
-      this.world.add(this.battleUI);
-
-      this.battlePlayer.x = this.player.x;
-      this.battlePlayer.y = this.player.y;
-
-      this.entityWithPriority = this.battlePlayer;
-    }
-
     this.gameMode = to;
   }
 
   public update():void {
     switch (this.gameMode) {
       case Mode.Normal: this.normalUpdate(); return;
-      case Mode.Battle: this.battleUpdate(); return;
       default: debugger;
     }
   }
@@ -154,15 +138,6 @@ class MainState extends Phaser.State {
     if (kb.isDown(Phaser.Keyboard.Q)) {
       this.map.reload();
     }
-
-    var closest:Monster = (<List<Monster>> this.groups("Monster")).sortByKey((e:Entity) => { return C.entityDist(this.player, e); }).first();
-    if (C.entityDist(this.player, closest) < 100) {
-      this.switchMode(Mode.Battle);
-    }
-  }
-
-  public battleUpdate() {
-    console.log("this is a battle. beware");
   }
 }
 
@@ -477,18 +452,6 @@ class MenuUI extends Phaser.Group {
     this.menuItems[this.selectedItemIndex].selected = false;
     this.selectedItemIndex = Phaser.Math.clamp(this.selectedItemIndex + dx, 0, this.menuItems.length - 1);
     this.menuItems[this.selectedItemIndex].selected = true;
-  }
-}
-
-class BattleUI extends Phaser.Group {
-  p:PlayerInBattle;
-  monster:Monster;
-  menu:MenuUI;
-
-  constructor() {
-    super(game);
-
-    this.add(this.menu = new MenuUI(["Attack", "Items", "Run"]));
   }
 }
 
