@@ -455,34 +455,6 @@ class MenuUI extends Phaser.Group {
   }
 }
 
-class PlayerInBattle extends Phaser.Group {
-  healthbar:HealthBar;
-  health:number;
-  maxHealth:number;
-  player:Entity;
-
-  constructor() {
-    super(game);
-
-    this.player = new Entity("player");
-    this.player.x = 0;
-    this.player.y = 0;
-    this.add(this.player);
-
-    this.health = 20;
-    this.maxHealth = 20;
-    this.healthbar = new HealthBar(this.health, this.maxHealth);
-
-    this.add(this.healthbar);
-  }
-
-  update() {
-    if (C.state().entityWithPriority == this) {
-      console.log("im in a battle!");
-    }
-  }
-}
-
 class Player extends Entity {
   speed:number = 300;
   map:GameMap;
