@@ -96,7 +96,6 @@ var MainState = (function (_super) {
 
         //this.game.add.existing(new NPC());
         this.player = new Player(this.game, this.map);
-        this.battlePlayer = new PlayerInBattle();
 
         this.game.add.existing(this.player);
 
@@ -212,16 +211,52 @@ var BaseMonster = (function (_super) {
     return BaseMonster;
 })(Entity);
 
+var MonsterMode;
+(function (MonsterMode) {
+    MonsterMode[MonsterMode["Walking"] = 0] = "Walking";
+    MonsterMode[MonsterMode["Stopped"] = 1] = "Stopped";
+})(MonsterMode || (MonsterMode = {}));
+
 var Monster = (function (_super) {
     __extends(Monster, _super);
     function Monster() {
         _super.call(this, "monster");
+        this.currentMode = 0 /* Walking */;
+        this.timeLeft = 30;
+        this.walkingDX = 0;
+        this.walkingDY = 0;
     }
     Monster.prototype.damage = function (amount) {
         return _super.prototype.damage.call(this, amount);
     };
 
     Monster.prototype.update = function () {
+        switch (this.currentMode) {
+            case 1 /* Stopped */:
+                if (--this.timeLeft <= 0) {
+                    var dx = [0, 0, 1, -1];
+                    var dy = [1, -1, 0, 0];
+                    var i = Math.floor(Math.random() * dx.length);
+
+                    this.walkingDX = dx[i];
+                    this.walkingDY = dy[i];
+                    this.timeLeft = 50;
+
+                    this.currentMode = 0 /* Walking */;
+                }
+
+                break;
+            case 0 /* Walking */:
+                if (--this.timeLeft <= 0) {
+                    this.timeLeft = 50;
+                    this.currentMode = 1 /* Stopped */;
+                } else {
+                    this.x += this.walkingDX;
+                    this.y += this.walkingDY;
+                }
+
+                break;
+        }
     };
     return Monster;
 })(BaseMonster);
@@ -443,30 +478,6 @@ var MenuUI = (function (_super) {
     return MenuUI;
 })(Phaser.Group);
 
-var PlayerInBattle = (function (_super) {
-    __extends(PlayerInBattle, _super);
-    function PlayerInBattle() {
-        _super.call(this, game);
-
-        this.player = new Entity("player");
-        this.player.x = 0;
-        this.player.y = 0;
-        this.add(this.player);
-
-        this.health = 20;
-        this.maxHealth = 20;
-        this.healthbar = new HealthBar(this.health, this.maxHealth);
-
-        this.add(this.healthbar);
-    }
-    PlayerInBattle.prototype.update = function () {
-        if (C.state().entityWithPriority == this) {
-            console.log("im in a battle!");
-        }
-    };
-    return PlayerInBattle;
-})(Phaser.Group);
-
 var Player = (function (_super) {
     __extends(Player, _super);
     function Player(game, map) {
@@ -495,19 +506,19 @@ var Player = (function (_super) {
     Player.prototype.update = function () {
         var keyboard = this.game.input.keyboard;
 
-        if (keyboard.isDown(Phaser.Keyboard.A)) {
+        if (keyboard.isDown(Phaser.Keyboard.LEFT)) {
             this.body.velocity.x = -this.speed;
         }
 
-        if (keyboard.isDown(Phaser.Keyboard.D)) {
+        if (keyboard.isDown(Phaser.Keyboard.RIGHT)) {
             this.body.velocity.x = this.speed;
         }
 
-        if (keyboard.isDown(Phaser.Keyboard.W)) {
+        if (keyboard.isDown(Phaser.Keyboard.UP)) {
             this.body.velocity.y = -this.speed;
         }
 
-        if (keyboard.isDown(Phaser.Keyboard.S)) {
+        if (keyboard.isDown(Phaser.Keyboard.DOWN)) {
             this.body.velocity.y = this.speed;
         }
     };

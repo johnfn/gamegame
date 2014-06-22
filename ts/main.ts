@@ -73,7 +73,6 @@ class MainState extends Phaser.State {
   monster:Monster;
 
   // for battles
-  battlePlayer:PlayerInBattle;
   entityWithPriority:any;
 
   public groups(key: string): List<any> {
@@ -103,7 +102,6 @@ class MainState extends Phaser.State {
     //this.game.add.existing(new NPC());
 
     this.player = new Player(this.game, this.map);
-    this.battlePlayer = new PlayerInBattle();
 
     this.game.add.existing(this.player);
 
@@ -229,7 +227,17 @@ class BaseMonster extends Entity {
   }
 }
 
+enum MonsterMode {
+  Walking,
+  Stopped
+}
+
 class Monster extends BaseMonster {
+  currentMode:MonsterMode = MonsterMode.Walking;
+  timeLeft:number = 30;
+  walkingDX:number = 0;
+  walkingDY:number = 0;
+
   constructor() {
     super("monster");
   }
@@ -239,7 +247,32 @@ class Monster extends BaseMonster {
   }
 
   update():void {
+    switch (this.currentMode) {
+      case MonsterMode.Stopped:
+        if (--this.timeLeft <= 0) {
+          var dx = [0,  0, 1, -1];
+          var dy = [1, -1, 0,  0]
+          var i = Math.floor(Math.random() * dx.length);
 
+          this.walkingDX = dx[i];
+          this.walkingDY = dy[i];
+          this.timeLeft = 50;
+
+          this.currentMode = MonsterMode.Walking;
+        }
+
+        break;
+      case MonsterMode.Walking:
+        if (--this.timeLeft <= 0) {
+          this.timeLeft = 50;
+          this.currentMode = MonsterMode.Stopped;
+        } else {
+          this.x += this.walkingDX;
+          this.y += this.walkingDY;
+        }
+
+        break;
+    }
   }
 }
 
@@ -485,19 +518,19 @@ class Player extends Entity {
   update():void {
     var keyboard = this.game.input.keyboard;
 
-    if (keyboard.isDown(Phaser.Keyboard.A)) {
+    if (keyboard.isDown(Phaser.Keyboard.LEFT)) {
       this.body.velocity.x = -this.speed;
     }
 
-    if (keyboard.isDown(Phaser.Keyboard.D)) {
+    if (keyboard.isDown(Phaser.Keyboard.RIGHT)) {
       this.body.velocity.x = this.speed;
     }
 
-    if (keyboard.isDown(Phaser.Keyboard.W)) {
+    if (keyboard.isDown(Phaser.Keyboard.UP)) {
       this.body.velocity.y = -this.speed;
     }
 
-    if (keyboard.isDown(Phaser.Keyboard.S)) {
+    if (keyboard.isDown(Phaser.Keyboard.DOWN)) {
       this.body.velocity.y = this.speed;
     }
   }
